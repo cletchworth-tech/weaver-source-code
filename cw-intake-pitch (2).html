@@ -1,0 +1,1918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Role Intake – CoreWeave</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --black: #000; --dark: #343338; --g1: #504F59; --g2: #63606D; --g3: #747283;
+  --g4: #CDCED6; --g5: #EBEBEE; --g6: #F3F3F5; --cal: #F9FAFC; --white: #fff;
+  --lapis: #1326E1; --lp: #DAE5FF; --lm: #6989FF;
+  --green: #059669; --gp: #D1FAE5; --red: #DC2626; --rp: #FEF2F2;
+  --orange: #F97316; --purple: #7C3AED; --pp: #EDE9FE;
+  --font: 'Plus Jakarta Sans', sans-serif;
+}
+body { font-family: var(--font); font-size: 13px; color: var(--dark); background: var(--g6); padding: 32px 16px 60px; line-height: 1.5; }
+.page { max-width: 1000px; margin: 0 auto; background: var(--white); border-radius: 4px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.07), 0 8px 32px rgba(0,0,0,.06); }
+.accent { height: 3px; background: var(--lapis); }
+
+/* ── HEADER ── */
+.header { background: var(--black); padding: 24px 40px 20px; display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.logo-row { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
+.logo-wm { font-size: 14px; font-weight: 700; color: var(--white); }
+.header h1 { font-size: 20px; font-weight: 800; color: var(--white); letter-spacing: -.4px; }
+.header-sub { margin-top: 4px; font-size: 11px; color: var(--g3); }
+.hdr-right { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; flex-shrink: 0; }
+.hdr-badge { background: var(--lapis); color: var(--white); font-size: 10px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; padding: 4px 10px; border-radius: 2px; }
+.prog-lbl { font-size: 10px; color: var(--g3); margin-bottom: 5px; text-align: right; }
+.prog-bar { width: 130px; height: 4px; background: rgba(255,255,255,.15); border-radius: 2px; }
+.prog-fill { height: 100%; background: var(--lm); border-radius: 2px; transition: width .4s; }
+
+/* ── TABS ── */
+.tab-nav { background: var(--g6); border-bottom: 1px solid var(--g5); padding: 0 40px; display: flex; align-items: center; position: sticky; top: 0; z-index: 20; overflow-x: auto; }
+.tb { font-family: var(--font); font-size: 12px; font-weight: 600; padding: 11px 16px; border: none; background: none; color: var(--g2); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all .15s; white-space: nowrap; flex-shrink: 0; }
+.tb:hover { color: var(--lapis); }
+.tb.on { color: var(--lapis); border-bottom-color: var(--lapis); }
+.save-pill { margin-left: auto; font-size: 11px; font-weight: 600; color: var(--green); background: var(--gp); border-radius: 10px; padding: 3px 10px; display: flex; align-items: center; gap: 4px; opacity: 0; transition: opacity .3s; flex-shrink: 0; }
+.save-pill.on { opacity: 1; }
+
+/* ── SECTIONS ── */
+.body-tab { background: var(--cal); }
+.sec { border-bottom: 1px solid var(--g5); }
+.sec-hdr { background: var(--g6); padding: 9px 40px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--g5); cursor: pointer; user-select: none; transition: background .1s; }
+.sec-hdr:hover { background: var(--g5); }
+.sec-hdr-l { display: flex; align-items: center; gap: 8px; }
+.snum { font-size: 10px; font-weight: 700; color: var(--g2); letter-spacing: .5px; }
+.stitle { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--g2); }
+.chev { color: var(--g3); font-size: 11px; transition: transform .2s; margin-left: 6px; }
+.sec.closed .sec-body { display: none; }
+.sec.closed .chev { transform: rotate(-90deg); }
+.sec-body { padding: 18px 40px 22px; }
+
+/* ── GRID / FIELDS ── */
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.full { grid-column: 1 / -1; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+label { font-size: 11px; font-weight: 600; color: var(--g1); }
+input[type=text], input[type=url], select, textarea { font-family: var(--font); font-size: 13px; color: var(--dark); background: var(--white); border: 1px solid var(--g4); border-radius: 6px; padding: 7px 10px; width: 100%; transition: border-color .15s, box-shadow .15s; appearance: none; }
+input::placeholder, textarea::placeholder { color: #c0c4cc; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--lapis); box-shadow: 0 0 0 3px var(--lp); }
+textarea { resize: vertical; min-height: 70px; }
+.sw { position: relative; }
+.sw::after { content: ''; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: 4px solid transparent; border-top: 5px solid var(--g3); pointer-events: none; }
+.sw select { padding-right: 26px; cursor: pointer; }
+.ai-f { border-color: var(--lapis) !important; background: #f0f4ff !important; }
+.aib { display: inline-flex; align-items: center; font-size: 9px; font-weight: 700; color: var(--lapis); background: var(--lp); border-radius: 2px; padding: 1px 5px; margin-left: 4px; }
+
+/* ── PILLS ── */
+.pill-lbl { font-size: 11px; font-weight: 600; color: var(--g1); margin-bottom: 6px; display: block; }
+.pill-grp { display: flex; flex-wrap: wrap; gap: 7px; }
+.pill { display: inline-flex; align-items: center; padding: 5px 13px; border-radius: 20px; border: 1.5px solid var(--g4); font-size: 12px; font-weight: 500; color: var(--g2); cursor: pointer; background: var(--white); user-select: none; transition: all .15s; }
+.pill:hover { border-color: var(--lm); color: var(--lapis); }
+.pill.on { background: var(--lp); border-color: var(--lapis); color: var(--lapis); font-weight: 700; }
+.tog { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 2px; }
+.tog label { display: flex; align-items: center; gap: 6px; font-weight: 400; font-size: 12px; cursor: pointer; color: var(--dark); background: var(--white); border: 1px solid var(--g4); border-radius: 6px; padding: 5px 10px; transition: border-color .15s; }
+.tog label:hover { border-color: var(--lm); }
+.tog input { accent-color: var(--lapis); width: 13px; height: 13px; }
+
+/* ── BUTTONS ── */
+.jd-row { display: flex; gap: 8px; }
+.jd-row input { flex: 1; }
+.bsm { font-family: var(--font); font-size: 11px; font-weight: 700; padding: 7px 13px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px; white-space: nowrap; flex-shrink: 0; border: 1.5px solid var(--lapis); background: var(--white); color: var(--lapis); transition: all .15s; }
+.bsm:hover { background: var(--lapis); color: var(--white); }
+.bsm:disabled { opacity: .45; cursor: not-allowed; }
+.bgen { font-family: var(--font); font-size: 11px; font-weight: 700; padding: 7px 16px; border-radius: 6px; cursor: pointer; background: var(--lapis); color: var(--white); border: none; display: flex; align-items: center; gap: 6px; transition: opacity .15s; white-space: nowrap; }
+.bgen:hover { opacity: .88; }
+.bgen:disabled { opacity: .45; cursor: not-allowed; }
+.btn { font-family: var(--font); font-size: 12px; font-weight: 700; padding: 8px 18px; border-radius: 6px; cursor: pointer; border: none; display: flex; align-items: center; gap: 6px; transition: all .15s; white-space: nowrap; }
+.btn-ghost { background: var(--white); border: 1px solid var(--g4); color: var(--dark); }
+.btn-ghost:hover { background: var(--g6); }
+.btn-outline { background: var(--white); border: 1px solid var(--lapis); color: var(--lapis); }
+.btn-outline:hover { background: var(--lp); }
+.btn-primary { background: var(--lapis); color: var(--white); }
+.btn-primary:hover { filter: brightness(1.1); }
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+
+/* ── ANALYSIS PANEL ── */
+.apanel { background: var(--white); border: 1px solid var(--lp); border-radius: 6px; overflow: hidden; margin-bottom: 14px; display: none; }
+.apanel.on { display: block; }
+.apanel-hdr { background: var(--lp); padding: 9px 14px; display: flex; align-items: center; justify-content: space-between; }
+.apanel-title { font-size: 11px; font-weight: 700; color: var(--lapis); }
+.xb { background: none; border: none; cursor: pointer; color: var(--lapis); font-size: 16px; line-height: 1; }
+.apanel-body { padding: 12px 16px; font-size: 12px; line-height: 1.7; white-space: pre-wrap; }
+.streaming::after { content: '▋'; animation: blink .7s step-end infinite; color: var(--lapis); }
+.err { color: var(--red); background: var(--rp); border: 1px solid #fecaca; border-radius: 6px; padding: 10px 14px; font-size: 12px; margin-bottom: 12px; display: none; }
+.err.on { display: block; }
+.ai-gen-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 10px 14px; background: linear-gradient(90deg, #f0f4ff, var(--lp)); border: 1px solid rgba(19,38,225,.15); border-radius: 8px; }
+.ai-gen-txt { font-size: 12px; color: var(--lapis); font-weight: 600; }
+.ai-gen-sub { font-size: 11px; color: var(--g2); margin-top: 1px; }
+
+/* ── YES/NO QUESTIONS ── */
+.ynq-list { display: flex; flex-direction: column; gap: 8px; }
+.ynq-row { display: grid; grid-template-columns: 1fr auto auto auto; gap: 8px; align-items: center; background: var(--white); border: 1px solid var(--g5); border-radius: 8px; padding: 10px 12px; }
+.ynq-input { border: none; background: transparent; font-family: var(--font); font-size: 13px; color: var(--dark); padding: 2px 0; border-bottom: 1px solid transparent; width: 100%; }
+.ynq-input:focus { outline: none; border-bottom-color: var(--lapis); }
+.ynq-badge { padding: 3px 9px; border-radius: 10px; font-size: 10px; font-weight: 700; cursor: pointer; border: 1.5px solid var(--g4); background: var(--white); color: var(--g2); transition: all .15s; }
+.ynq-badge.yes.on { background: var(--gp); border-color: var(--green); color: var(--green); }
+.ynq-badge.no.on { background: var(--rp); border-color: var(--red); color: var(--red); }
+.ynq-ko { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 10px; cursor: pointer; border: 1.5px solid var(--g4); background: var(--white); color: var(--g2); white-space: nowrap; transition: all .15s; }
+.ynq-ko.on { background: #FFF7ED; border-color: var(--orange); color: var(--orange); }
+.ynq-del { background: none; border: none; cursor: pointer; color: var(--g4); font-size: 18px; line-height: 1; transition: color .1s; flex-shrink: 0; }
+.ynq-del:hover { color: var(--red); }
+.ynq-add { margin-top: 8px; font-family: var(--font); font-size: 11px; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer; border: 1.5px dashed var(--lapis); background: var(--lp); color: var(--lapis); display: inline-flex; align-items: center; gap: 5px; transition: all .15s; }
+.ynq-add:hover { background: var(--lapis); color: var(--white); }
+
+/* ── INTERVIEW TABLE ── */
+.itbl-wrap { border: 1px solid var(--g5); border-radius: 8px; overflow: hidden; }
+.itbl-row { display: grid; grid-template-columns: 28px 1fr 1fr 80px 1fr 32px; align-items: stretch; border-bottom: 1px solid var(--g5); }
+.itbl-row:last-child { border-bottom: none; }
+.itbl-row:nth-child(even) { background: var(--cal); }
+.itbl-row:nth-child(odd) { background: var(--white); }
+.itbl-row.dragging { opacity: .4; }
+.itbl-hdr { background: var(--dark) !important; }
+.itbl-cell { padding: 7px 10px; border-right: 1px solid var(--g5); font-size: 12px; display: flex; align-items: center; }
+.itbl-cell:last-child { border-right: none; padding: 4px; }
+.itbl-hdr .itbl-cell { font-size: 10px; font-weight: 700; letter-spacing: .7px; text-transform: uppercase; color: var(--white); border-color: rgba(255,255,255,.07); }
+.drag-col { display: flex; align-items: center; justify-content: center; cursor: grab; color: var(--g4); font-size: 13px; border-right: 1px solid var(--g5); padding: 0 4px; }
+.drag-col:hover { color: var(--g2); }
+.td-in { border: none; background: transparent; padding: 2px 4px; font-size: 12px; border-bottom: 1px solid transparent; border-radius: 0; font-family: var(--font); width: 100%; color: var(--dark); }
+.td-in:focus { outline: none; border-bottom-color: var(--lapis); background: var(--lp); border-radius: 2px; }
+.sw-td { position: relative; width: 100%; }
+.sw-td::after { content: ''; position: absolute; right: 7px; top: 50%; transform: translateY(-50%); border: 3px solid transparent; border-top: 4px solid var(--g3); pointer-events: none; }
+.td-sel { font-size: 12px; padding: 4px 20px 4px 6px; border-radius: 4px; font-family: var(--font); border: 1px solid var(--g4); background: var(--white); color: var(--dark); appearance: none; cursor: pointer; width: 100%; }
+.td-sel:focus { outline: none; border-color: var(--lapis); }
+.rm-btn { background: none; border: none; cursor: pointer; color: var(--g4); font-size: 18px; line-height: 1; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; transition: color .1s; }
+.rm-btn:hover { color: var(--red); }
+.add-bar { display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end; position: relative; }
+.add-btn { font-family: var(--font); font-size: 11px; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all .15s; }
+.add-preset { border: 1.5px dashed var(--g4); background: var(--white); color: var(--g2); }
+.add-preset:hover { border-color: var(--lm); color: var(--lapis); background: var(--lp); }
+.add-custom { border: 1.5px solid var(--lapis); background: var(--lp); color: var(--lapis); }
+.add-custom:hover { background: var(--lapis); color: var(--white); }
+.presets-menu { display: none; position: absolute; right: 0; bottom: calc(100% + 6px); background: var(--white); border: 1px solid var(--g5); border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,.12); padding: 8px; z-index: 30; flex-wrap: wrap; gap: 5px; min-width: 320px; }
+.presets-menu.on { display: flex; }
+.preset-chip { font-family: var(--font); font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 10px; cursor: pointer; border: 1px solid var(--g4); background: var(--white); color: var(--g2); transition: all .1s; }
+.preset-chip:hover { border-color: var(--lapis); color: var(--lapis); background: var(--lp); }
+
+/* ── COMPETENCY THEMES ── */
+.comp-panel { background: var(--white); border: 1px solid var(--g5); border-radius: 6px; overflow: hidden; }
+.comp-hdr { background: linear-gradient(90deg, #0a1585, var(--lapis)); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
+.comp-title { font-size: 11px; font-weight: 700; color: var(--white); letter-spacing: .5px; text-transform: uppercase; display: flex; align-items: center; gap: 7px; }
+.btn-inv { font-family: var(--font); font-size: 11px; font-weight: 700; padding: 6px 14px; border-radius: 5px; cursor: pointer; border: 1.5px solid rgba(255,255,255,.6); background: rgba(255,255,255,.12); color: var(--white); display: flex; align-items: center; gap: 5px; transition: background .15s; }
+.btn-inv:hover { background: rgba(255,255,255,.25); }
+.btn-inv:disabled { opacity: .45; cursor: not-allowed; }
+.comp-body { padding: 14px; }
+.comp-empty { font-size: 12px; color: var(--g3); font-style: italic; text-align: center; padding: 18px 0; }
+.comp-list { display: flex; flex-direction: column; gap: 8px; }
+.comp-card { background: var(--cal); border: 1px solid var(--g5); border-radius: 8px; padding: 12px 14px; transition: box-shadow .15s; }
+.comp-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.comp-card-top { display: flex; align-items: flex-start; gap: 10px; }
+.drag-h { color: var(--g4); font-size: 14px; cursor: grab; padding-top: 2px; flex-shrink: 0; }
+.comp-rank { width: 22px; height: 22px; background: var(--lp); color: var(--lapis); border-radius: 50%; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+.comp-fields { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.comp-name-in { font-family: var(--font); font-size: 13px; font-weight: 700; color: var(--dark); border: none; background: transparent; border-bottom: 1px solid transparent; padding: 1px 0; width: 100%; }
+.comp-name-in:focus { outline: none; border-bottom-color: var(--lapis); background: var(--lp); padding: 1px 4px; border-radius: 3px; }
+.comp-desc-in { font-family: var(--font); font-size: 11px; color: var(--g2); border: none; background: transparent; border-bottom: 1px solid transparent; padding: 1px 0; width: 100%; resize: none; min-height: 36px; }
+.comp-desc-in:focus { outline: none; border-bottom-color: var(--lapis); background: var(--lp); padding: 2px 4px; border-radius: 3px; }
+.comp-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.sw-sm { position: relative; display: inline-block; }
+.sw-sm::after { content: ''; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: 3px solid transparent; border-top: 4px solid var(--g3); pointer-events: none; }
+.comp-sel { font-family: var(--font); font-size: 11px; font-weight: 600; padding: 3px 22px 3px 8px; border-radius: 6px; border: 1px solid var(--g4); background: var(--white); color: var(--dark); appearance: none; cursor: pointer; }
+.comp-sel:focus { outline: none; border-color: var(--lapis); }
+.comp-del { background: none; border: none; cursor: pointer; color: var(--g4); font-size: 16px; line-height: 1; flex-shrink: 0; transition: color .1s; padding-top: 2px; }
+.comp-del:hover { color: var(--red); }
+.comp-add-btn { margin-top: 10px; font-family: var(--font); font-size: 11px; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer; border: 1.5px dashed var(--g4); background: var(--white); color: var(--g2); display: inline-flex; align-items: center; gap: 5px; transition: all .15s; }
+.comp-add-btn:hover { border-color: var(--lapis); color: var(--lapis); background: var(--lp); }
+
+/* ── OUTREACH ── */
+.out-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+.out-tab { font-family: var(--font); font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 6px; cursor: pointer; border: 1.5px solid var(--g4); background: var(--white); color: var(--g2); transition: all .15s; }
+.out-tab:hover { border-color: var(--lm); color: var(--lapis); }
+.out-tab.on { border-color: var(--lapis); background: var(--lp); color: var(--lapis); }
+.out-panel { display: none; }
+.out-panel.on { display: block; }
+.out-box { background: var(--white); border: 1px solid var(--g5); border-radius: 8px; overflow: hidden; margin-top: 10px; }
+.out-box-hdr { padding: 9px 16px; background: var(--g6); border-bottom: 1px solid var(--g5); display: flex; align-items: center; justify-content: space-between; }
+.out-box-title { font-size: 10px; font-weight: 700; color: var(--g2); letter-spacing: .5px; text-transform: uppercase; }
+.out-box-body { padding: 14px 16px; font-size: 13px; line-height: 1.75; color: var(--dark); white-space: pre-wrap; min-height: 36px; }
+.step-card { background: var(--cal); border: 1px solid var(--g5); border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; }
+.step-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.step-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+.step-day { font-size: 11px; color: var(--g3); font-weight: 600; }
+.step-subj { font-size: 12px; font-weight: 700; color: var(--dark); margin-bottom: 5px; }
+.step-body { font-size: 12px; line-height: 1.7; color: var(--g1); white-space: pre-wrap; }
+.row-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.cbtn { font-family: var(--font); font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 6px; cursor: pointer; border: 1.5px solid var(--g4); background: var(--white); color: var(--g2); transition: all .15s; display: flex; align-items: center; gap: 4px; }
+.cbtn:hover { border-color: var(--lapis); color: var(--lapis); }
+
+/* ── INTERVIEW GUIDE ── */
+.ig-layout { display: grid; grid-template-columns: 200px 1fr; min-height: 560px; }
+.ig-sidebar { background: var(--g6); border-right: 1px solid var(--g5); padding: 14px 0; }
+.ig-sidebar-hdr { font-size: 10px; font-weight: 700; color: var(--g3); letter-spacing: .8px; text-transform: uppercase; padding: 0 16px; margin-bottom: 8px; }
+.ig-stage-btn { width: 100%; text-align: left; font-family: var(--font); font-size: 12px; font-weight: 600; padding: 9px 16px; border: none; background: none; cursor: pointer; color: var(--g2); transition: all .1s; border-left: 3px solid transparent; display: flex; align-items: center; justify-content: space-between; }
+.ig-stage-btn:hover { background: var(--g5); color: var(--dark); }
+.ig-stage-btn.on { background: var(--white); color: var(--lapis); border-left-color: var(--lapis); font-weight: 700; }
+.ig-count { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; background: var(--lp); color: var(--lapis); }
+.ig-main { padding: 20px 26px; overflow-y: auto; }
+.ig-stage-hdr { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+.ig-stage-title { font-size: 15px; font-weight: 800; color: var(--dark); }
+.ig-stage-meta { font-size: 11px; color: var(--g2); margin-top: 2px; line-height: 1.5; }
+.ig-actions { display: flex; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
+.ig-empty { text-align: center; padding: 40px 20px; color: var(--g3); font-size: 12px; font-style: italic; }
+.qcard { background: var(--white); border: 1px solid var(--g5); border-radius: 8px; margin-bottom: 10px; overflow: hidden; transition: box-shadow .15s; }
+.qcard:hover { box-shadow: 0 2px 10px rgba(0,0,0,.07); }
+.qcard-top { padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px; }
+.qcard-num { width: 26px; height: 26px; background: var(--lp); color: var(--lapis); border-radius: 50%; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+.qcard-body { flex: 1; }
+.qcard-q { font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--dark); border: none; background: transparent; border-bottom: 1px solid transparent; width: 100%; padding: 1px 0; resize: none; line-height: 1.5; min-height: 24px; }
+.qcard-q:focus { outline: none; border-bottom-color: var(--lapis); background: var(--lp); padding: 2px 6px; border-radius: 3px; }
+.qcard-meta { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.qcard-comp { font-size: 10px; font-weight: 600; color: var(--purple); background: var(--pp); padding: 2px 8px; border-radius: 10px; }
+.qcard-type { font-size: 10px; font-weight: 600; color: var(--g2); background: var(--g5); padding: 2px 8px; border-radius: 10px; }
+.qcard-del { background: none; border: none; cursor: pointer; color: var(--g4); font-size: 16px; flex-shrink: 0; padding-top: 1px; transition: color .1s; }
+.qcard-del:hover { color: var(--red); }
+.qcard-actions { margin-top: 6px; display: flex; gap: 6px; }
+.qcard-toggle { font-family: var(--font); font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 6px; cursor: pointer; border: 1px solid var(--g4); background: var(--white); color: var(--g2); transition: all .1s; }
+.qcard-toggle:hover { border-color: var(--lapis); color: var(--lapis); }
+.rubric { display: none; border-top: 1px solid var(--g5); padding: 14px 16px; background: var(--cal); }
+.rubric.on { display: block; }
+.rubric-title { font-size: 10px; font-weight: 700; color: var(--g2); letter-spacing: .7px; text-transform: uppercase; margin-bottom: 10px; }
+.rubric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.rubric-cell { background: var(--white); border: 1px solid var(--g5); border-radius: 6px; padding: 10px 12px; }
+.rubric-score { font-size: 10px; font-weight: 800; margin-bottom: 4px; }
+.rubric-score.s1 { color: var(--red); }
+.rubric-score.s2 { color: #D97706; }
+.rubric-score.s3 { color: var(--green); }
+.rubric-score.s4 { color: var(--lapis); }
+.rubric-ta { font-family: var(--font); font-size: 11px; color: var(--g1); border: none; background: transparent; width: 100%; resize: none; min-height: 64px; line-height: 1.5; }
+.rubric-ta:focus { outline: none; background: var(--lp); border-radius: 3px; padding: 2px 4px; }
+.ig-export-bar { border-top: 1px solid var(--g5); padding: 14px 28px; background: var(--white); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.ig-export-note { font-size: 11px; color: var(--g3); }
+
+/* ── PITCH TAB ── */
+.pitch-intro { padding: 18px 40px; background: var(--cal); border-bottom: 1px solid var(--g5); }
+.pitch-intro h2 { font-size: 15px; font-weight: 800; color: var(--dark); margin-bottom: 4px; }
+.pitch-intro p { font-size: 12px; color: var(--g2); line-height: 1.6; }
+.pitch-ctrl { padding: 14px 40px; background: var(--white); border-bottom: 1px solid var(--g5); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.chip-row { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+.chip { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 10px; background: var(--lp); color: var(--lapis); border: 1px solid rgba(19,38,225,.2); }
+.chip.empty { background: var(--g6); color: var(--g3); border-color: var(--g5); }
+.btn-pitch { font-family: var(--font); font-size: 12px; font-weight: 700; padding: 9px 18px; border-radius: 6px; cursor: pointer; background: linear-gradient(135deg, #0a1585, var(--lapis)); color: var(--white); border: none; display: flex; align-items: center; gap: 7px; transition: opacity .15s; white-space: nowrap; }
+.btn-pitch:hover { opacity: .88; }
+.btn-pitch:disabled { opacity: .45; cursor: not-allowed; }
+.pitch-out { padding: 24px 40px; }
+.pitch-empty { text-align: center; padding: 50px 20px; }
+.pitch-empty-icon { font-size: 32px; margin-bottom: 10px; }
+.pitch-empty-title { font-size: 14px; font-weight: 700; color: var(--dark); margin-bottom: 5px; }
+.pitch-empty-sub { font-size: 12px; color: var(--g3); }
+.pitch-doc-hdr { background: linear-gradient(135deg, #08104a, var(--lapis)); border-radius: 8px; padding: 22px 26px; margin-bottom: 18px; color: var(--white); }
+.pitch-doc-role { font-size: 19px; font-weight: 800; letter-spacing: -.3px; }
+.pitch-doc-meta { margin-top: 7px; font-size: 12px; color: rgba(255,255,255,.65); display: flex; gap: 14px; flex-wrap: wrap; }
+.psec { margin-bottom: 14px; background: var(--white); border: 1px solid var(--g5); border-radius: 8px; overflow: hidden; }
+.psec-hdr { padding: 10px 16px; background: var(--g6); border-bottom: 1px solid var(--g5); display: flex; align-items: center; justify-content: space-between; }
+.psec-title { font-size: 11px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--g2); display: flex; align-items: center; gap: 6px; }
+.glean-b { font-size: 10px; font-weight: 700; color: var(--purple); background: var(--pp); padding: 2px 7px; border-radius: 10px; }
+.psec-body { padding: 14px 16px; font-size: 13px; line-height: 1.75; color: var(--dark); white-space: pre-wrap; }
+.psec-body ul { margin: 8px 0 8px 18px; }
+.psec-body li { margin-bottom: 4px; }
+.pcopy { font-family: var(--font); font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; cursor: pointer; border: 1px solid var(--g4); background: var(--white); color: var(--g2); transition: all .15s; }
+.pcopy:hover { border-color: var(--lapis); color: var(--lapis); }
+.skel { background: linear-gradient(90deg, var(--g5) 25%, var(--g6) 50%, var(--g5) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; height: 56px; margin: 14px 16px; }
+
+/* ── FOOTER ── */
+.footer { background: var(--white); border-top: 1px solid var(--g5); padding: 14px 40px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.foot-note { font-size: 11px; color: var(--g3); }
+.foot-note a { color: var(--lapis); text-decoration: none; }
+.btn-grp { display: flex; gap: 8px; flex-wrap: wrap; }
+.ext-bar { background: var(--white); border-radius: 8px; padding: 10px 16px; margin: 12px 40px 0; display: flex; align-items: center; justify-content: space-between; font-size: 12px; }
+.ext-bar a { font-family: var(--font); font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 6px; text-decoration: none; white-space: nowrap; }
+
+/* ── TOAST ── */
+.toast { position: fixed; bottom: 24px; right: 24px; padding: 10px 16px; border-radius: 8px; font-family: var(--font); font-size: 12px; font-weight: 600; color: #fff; background: var(--dark); z-index: 9999; transform: translateY(8px); opacity: 0; transition: all .25s; pointer-events: none; max-width: 320px; }
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { background: var(--green); }
+.toast.error { background: var(--red); }
+.toast.info { background: var(--lapis); }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+@media (max-width: 680px) {
+  .sec-body, .sec-hdr, .header, .footer, .pitch-intro, .pitch-ctrl, .pitch-out, .tab-nav { padding-left: 20px; padding-right: 20px; }
+  .grid { grid-template-columns: 1fr; }
+  .full { grid-column: 1; }
+  .ig-layout { grid-template-columns: 1fr; }
+  .ig-sidebar { display: flex; flex-wrap: wrap; gap: 4px; padding: 12px; border-right: none; border-bottom: 1px solid var(--g5); }
+  .ig-stage-btn { width: auto; border-left: none; border-bottom: 2px solid transparent; padding: 6px 12px; border-radius: 6px; }
+  .ig-stage-btn.on { border-bottom-color: var(--lapis); background: var(--lp); }
+  .rubric-grid { grid-template-columns: 1fr 1fr; }
+}
+@media print {
+  body { background: #fff; padding: 0; }
+  .page { box-shadow: none; }
+  .footer, .tab-nav, .bsm, .btn-inv, .btn-pitch, .apanel, .pitch-ctrl, .ai-gen-bar, .row-btns, .add-bar, .comp-hdr, .ig-export-bar, .ig-actions, .qcard-actions { display: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+<div class="accent"></div>
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <div class="logo-row">
+      <svg width="24" height="24" viewBox="0 0 30 30" fill="none"><path d="M15 2.5C8.096 2.5 2.5 8.096 2.5 15C2.5 21.904 8.096 27.5 15 27.5C18.792 27.5 22.191 25.818 24.5 23.168L21.612 20.821C20.009 22.594 17.634 23.701 15 23.701C10.196 23.701 6.299 19.804 6.299 15C6.299 10.196 10.196 6.299 15 6.299C17.634 6.299 20.009 7.406 21.612 9.179L24.5 6.832C22.191 4.182 18.792 2.5 15 2.5Z" fill="#1326E1"/></svg>
+      <span class="logo-wm">CoreWeave</span>
+    </div>
+    <h1>Role Intake + Interview Guide</h1>
+    <p class="header-sub">Complete with your recruiting partner before opening a new role · <span id="date-stamp"></span></p>
+  </div>
+  <div class="hdr-right">
+    <div class="hdr-badge">Recruiting</div>
+    <div>
+      <div class="prog-lbl"><span id="prog-pct">0%</span> complete</div>
+      <div class="prog-bar"><div class="prog-fill" id="prog-fill"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tab-nav">
+  <button class="tb on" id="tb-form"  onclick="switchTab('form')">📋 Intake Form</button>
+  <button class="tb"    id="tb-guide" onclick="switchTab('guide')">🎯 Interview Guide</button>
+  <button class="tb"    id="tb-pitch" onclick="switchTab('pitch')">✦ Recruiter Brief</button>
+  <div class="save-pill" id="save-pill">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Saved
+  </div>
+</div>
+
+<!-- ═══════════════════ TAB: INTAKE FORM ═══════════════════ -->
+<div id="tab-form" class="body-tab">
+  <div style="padding:14px 40px 0">
+    <div class="apanel" id="apanel">
+      <div class="apanel-hdr">
+        <span class="apanel-title">✦ JD ANALYSIS · AI-SUGGESTED FIELDS HIGHLIGHTED IN BLUE</span>
+        <button class="xb" onclick="G('apanel').classList.remove('on')">×</button>
+      </div>
+      <div class="apanel-body" id="apanel-body"></div>
+    </div>
+    <div class="err" id="err-box"></div>
+  </div>
+
+  <!-- 01 ROLE DETAILS -->
+  <div class="sec" id="s1">
+    <div class="sec-hdr" onclick="togSec('s1')"><div class="sec-hdr-l"><span class="snum">01 ·</span><span class="stitle">Role Details</span></div><span class="chev">▾</span></div>
+    <div class="sec-body"><div class="grid">
+      <div class="field"><label>Role / Job Title <span class="aib" id="b-title" style="display:none">✦ AI</span></label>
+        <input type="text" id="f-title" placeholder="e.g. Senior Software Engineer" oninput="fc();syncPlanFromHeader()"></div>
+      <div class="field"><label>Level <span class="aib" id="b-level" style="display:none">✦ AI</span></label>
+        <div class="sw"><select id="f-level" onchange="fc()"><option value="">Select…</option><option>IC1</option><option>IC2</option><option>IC3</option><option>IC4</option><option>IC5</option><option>IC6</option><option>M1</option><option>M2</option><option>M3</option></select></div></div>
+      <div class="field"><label>Team / Department <span class="aib" id="b-team" style="display:none">✦ AI</span></label>
+        <input type="text" id="f-team" placeholder="e.g. Platform Engineering" oninput="fc();syncPlanFromHeader()"></div>
+      <div class="field"><label>Hiring Manager</label>
+        <input type="text" id="f-hm" placeholder="Full name" oninput="fc();syncHMToplan()"></div>
+      <div class="field"><label>Headcount</label><input type="text" id="f-hc" placeholder="e.g. 2" oninput="fc()"></div>
+      <div class="field"><label>Recruiter</label>
+        <input type="text" id="f-rec" placeholder="Full name" oninput="fc();syncRecruiterToPlan()"></div>
+      <div class="field full">
+        <label>JD Link <span class="aib" id="b-jd" style="display:none">✦ Analyzed</span></label>
+        <div class="jd-row">
+          <input type="url" id="f-jd" placeholder="Paste Google Docs URL…" oninput="onJdInput();fc()">
+          <button class="bsm" id="btn-analyze" onclick="analyzeJD()" disabled>
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 1v3M8 12v3M1 8h3M12 8h3M3.22 3.22l2.12 2.12M10.66 10.66l2.12 2.12M3.22 12.78l2.12-2.12M10.66 5.34l2.12-2.12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Analyze JD
+          </button>
+        </div>
+        <div id="paste-fb" style="display:none;margin-top:10px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <span style="font-size:11px;color:#C05211;font-weight:600">Couldn't fetch — paste JD text below:</span>
+            <button onclick="G('paste-fb').style.display='none'" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:14px;color:var(--g3)">×</button>
+          </div>
+          <textarea id="f-jdpaste" style="min-height:90px;border-color:#F97316" placeholder="Paste JD text here…" oninput="onPasteInput()"></textarea>
+          <button class="bsm" id="btn-paste" onclick="analyzeFromPaste()" disabled style="margin-top:8px;width:100%;justify-content:center">Analyze Pasted Text</button>
+        </div>
+      </div>
+      <div class="field"><label>Greenhouse Req Link</label><input type="url" id="f-gh" placeholder="https://…" oninput="fc()"></div>
+      <div class="field"><label>Is this a backfill?</label><div class="tog"><label><input type="radio" name="backfill" onchange="fc()"> Yes</label><label><input type="radio" name="backfill" onchange="fc()"> No</label></div></div>
+      <div class="field"><label>First time hiring at CoreWeave?</label><div class="tog"><label><input type="radio" name="firsthire" onchange="fc()"> Yes</label><label><input type="radio" name="firsthire" onchange="fc()"> No</label></div></div>
+      <div class="field"><label>Employment Type</label><div class="sw"><select id="f-emptype" onchange="fc()"><option value="">Select…</option><option>Full-time</option><option>Part-time</option><option>Contract</option><option>Contract-to-hire</option></select></div></div>
+      <div class="field"><label>Current Team Size</label><input type="text" id="f-teamsize" placeholder="e.g. 8" oninput="fc()"></div>
+    </div></div>
+  </div>
+
+  <!-- 02 LOCATIONS -->
+  <div class="sec" id="s2">
+    <div class="sec-hdr" onclick="togSec('s2')"><div class="sec-hdr-l"><span class="snum">02 ·</span><span class="stitle">Locations</span></div><span class="chev">▾</span></div>
+    <div class="sec-body">
+      <span class="pill-lbl">Select all that apply</span>
+      <div class="pill-grp" id="loc-pills">
+        <span class="pill" onclick="tp(this)">Livingston, NJ</span><span class="pill" onclick="tp(this)">New York, NY</span>
+        <span class="pill" onclick="tp(this)">Philadelphia, PA</span><span class="pill" onclick="tp(this)">Sunnyvale, CA</span>
+        <span class="pill" onclick="tp(this)">Bellevue, WA</span><span class="pill" onclick="tp(this)">London, UK</span>
+        <span class="pill" onclick="tp(this)">Washington D.C.</span><span class="pill" onclick="tp(this)">Europe Remote</span>
+        <span class="pill" onclick="tp(this)">US Remote</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 03 OVERVIEW & THE SELL -->
+  <div class="sec" id="s3">
+    <div class="sec-hdr" onclick="togSec('s3')"><div class="sec-hdr-l"><span class="snum">03 ·</span><span class="stitle">Overview &amp; The Sell</span></div><span class="chev">▾</span></div>
+    <div class="sec-body"><div class="grid">
+      <div class="field full"><label>Overview <span class="aib" id="b-overview" style="display:none">✦ AI</span></label><textarea id="f-overview" style="min-height:75px" placeholder="Brief summary of the role's purpose and org context…" oninput="fc()"></textarea></div>
+      <div class="field full"><label>What problems are you solving by hiring for this role?</label><textarea id="f-problem" style="min-height:65px" placeholder="Describe the gap this hire fills…" oninput="fc()"></textarea></div>
+      <div class="field full"><label>How would you sell this role to a candidate?</label><textarea id="f-sell" style="min-height:65px" placeholder="What makes this opportunity exciting?" oninput="fc()"></textarea></div>
+    </div></div>
+  </div>
+
+  <!-- 04 RESPONSIBILITIES -->
+  <div class="sec" id="s4">
+    <div class="sec-hdr" onclick="togSec('s4')"><div class="sec-hdr-l"><span class="snum">04 ·</span><span class="stitle">Responsibilities</span></div><span class="chev">▾</span></div>
+    <div class="sec-body"><div class="grid">
+      <div class="field full"><label>Key expectations &amp; responsibilities</label><textarea id="f-resp" placeholder="Core accountabilities…" oninput="fc()"></textarea></div>
+      <div class="field full"><label>Exciting projects &amp; challenges in first 6 months</label><textarea id="f-sixmo" placeholder="What will this person own immediately?" oninput="fc()"></textarea></div>
+      <div class="field full"><label>Cross-functional teams this role will work with</label><textarea id="f-cross" style="min-height:56px" placeholder="Key partners and stakeholders…" oninput="fc()"></textarea></div>
+      <div class="field"><label>Will there be direct reports?</label><div class="tog"><label><input type="radio" name="reports" onchange="fc()"> Yes</label><label><input type="radio" name="reports" onchange="fc()"> No</label></div></div>
+      <div class="field"><label>If yes, how many?</label><input type="text" id="f-rcnt" placeholder="e.g. 3–5" oninput="fc()"></div>
+    </div></div>
+  </div>
+
+  <!-- 05 REQUIREMENTS -->
+  <div class="sec" id="s5">
+    <div class="sec-hdr" onclick="togSec('s5')"><div class="sec-hdr-l"><span class="snum">05 ·</span><span class="stitle">Requirements</span></div><span class="chev">▾</span></div>
+    <div class="sec-body"><div class="grid">
+      <div class="field full"><label>Must-haves <span class="aib" id="b-mh" style="display:none">✦ AI</span></label><textarea id="f-mh" placeholder="Top 3–5 non-negotiables…" oninput="fc()"></textarea></div>
+      <div class="field full"><label>Nice-to-haves <span class="aib" id="b-nth" style="display:none">✦ AI</span></label><textarea id="f-nth" placeholder="Valuable but not blocking…" oninput="fc()"></textarea></div>
+      <div class="field full"><label>Tools / Systems <span class="aib" id="b-tools" style="display:none">✦ AI</span></label><textarea id="f-tools" style="min-height:56px" placeholder="Stack, platforms, certifications…" oninput="fc()"></textarea></div>
+    </div></div>
+  </div>
+
+  <!-- 06 MEETING CADENCE -->
+  <div class="sec" id="s6">
+    <div class="sec-hdr" onclick="togSec('s6')"><div class="sec-hdr-l"><span class="snum">06 ·</span><span class="stitle">Meeting Cadence</span></div><span class="chev">▾</span></div>
+    <div class="sec-body"><div class="grid">
+      <div class="field"><label>Kickoff date</label><input type="text" id="f-kickoff" placeholder="e.g. March 20, 2026" oninput="fc()"></div>
+      <div class="field"><label>Recruiter / HM sync frequency</label><div class="sw"><select id="f-sync" onchange="fc()"><option>Weekly</option><option>Bi-weekly</option><option>As needed</option></select></div></div>
+      <div class="field"><label>Pipeline review cadence</label><div class="sw"><select id="f-pipe" onchange="fc()"><option>Weekly</option><option>Bi-weekly</option><option>Monthly</option></select></div></div>
+      <div class="field"><label>Pipeline review attendees</label><input type="text" id="f-att" placeholder="e.g. HM, recruiter, team lead" oninput="fc()"></div>
+      <div class="field"><label>Interview feedback SLA</label><div class="sw"><select id="f-fbsla" onchange="fc()"><option>24 hours</option><option>48 hours</option><option>72 hours</option></select></div></div>
+      <div class="field"><label>Escalation contact</label><input type="text" id="f-esc" placeholder="Name if search stalls" oninput="fc()"></div>
+    </div></div>
+  </div>
+
+  <!-- 07 SOURCING STRATEGY -->
+  <div class="sec" id="s7">
+    <div class="sec-hdr" onclick="togSec('s7')"><div class="sec-hdr-l"><span class="snum">07 ·</span><span class="stitle">Sourcing Strategy</span></div><span class="chev">▾</span></div>
+    <div class="sec-body"><div class="grid">
+      <div class="field full">
+        <span class="pill-lbl">Primary sourcing channels</span>
+        <div class="pill-grp" id="src-pills">
+          <span class="pill" onclick="tp(this)">LinkedIn</span><span class="pill" onclick="tp(this)">Gem</span>
+          <span class="pill" onclick="tp(this)">Referrals</span><span class="pill" onclick="tp(this)">Events</span>
+          <span class="pill" onclick="tp(this)">Agency</span><span class="pill" onclick="tp(this)">Communities</span>
+          <span class="pill" onclick="tp(this)">Job boards</span>
+        </div>
+      </div>
+      <div class="field"><label>Gem Project Link</label><input type="url" id="f-gem" placeholder="https://app.gem.com/projects/…" oninput="fc()"></div>
+      <div class="field"><label>D&amp;I sourcing goal?</label><div class="sw"><select id="f-dei" onchange="fc()"><option>No specific target</option><option>Diverse slate required</option><option>Diverse finalist required</option></select></div></div>
+      <div class="field full"><label>Target companies / profiles</label><textarea id="f-tgt" style="min-height:56px" placeholder="Ideal backgrounds, competitor companies, personas to target…" oninput="fc()"></textarea></div>
+      <div class="field full"><label>Stay away from</label><textarea id="f-away" style="min-height:56px" placeholder="Profiles or companies that are not a fit…" oninput="fc()"></textarea></div>
+    </div></div>
+  </div>
+
+  <!-- 08 SLAs & SUCCESS -->
+  <div class="sec" id="s8">
+    <div class="sec-hdr" onclick="togSec('s8')"><div class="sec-hdr-l"><span class="snum">08 ·</span><span class="stitle">SLAs &amp; Success Metrics</span></div><span class="chev">▾</span></div>
+    <div class="sec-body"><div class="grid">
+      <div class="field"><label>Target time-to-fill</label><div class="sw"><select id="f-ttf" onchange="fc()"><option>30 days</option><option>45 days</option><option>60 days</option><option>90 days</option><option>ASAP</option></select></div></div>
+      <div class="field"><label>Submittals per week</label><div class="sw"><select id="f-sub" onchange="fc()"><option>1–2</option><option>3–5</option><option>5–8</option><option>8+</option></select></div></div>
+      <div class="field"><label>Hard deadline?</label><div class="sw"><select id="f-dl" onchange="fc()"><option>No</option><option>Yes</option></select></div></div>
+      <div class="field"><label>Driving urgency</label><input type="text" id="f-urg" placeholder="Product launch, contract, milestone…" oninput="fc()"></div>
+      <div class="field full"><label>How is success measured?</label><textarea id="f-suc" placeholder="Key KPIs, milestones at 30/60/90 days…" oninput="fc()"></textarea></div>
+    </div></div>
+  </div>
+
+  <!-- 09 ONBOARDING & RAMP -->
+  <div class="sec" id="s9">
+    <div class="sec-hdr" onclick="togSec('s9')"><div class="sec-hdr-l"><span class="snum">09 ·</span><span class="stitle">Onboarding &amp; Ramp</span></div><span class="chev">▾</span></div>
+    <div class="sec-body"><div class="grid">
+      <div class="field full"><label>30 / 60 / 90 day expectations</label><textarea id="f-ramp" style="min-height:75px" placeholder="What does success look like?" oninput="fc()"></textarea></div>
+      <div class="field"><label>Onboarding owner</label><input type="text" id="f-obown" placeholder="Buddy, manager, team lead…" oninput="fc()"></div>
+      <div class="field"><label>Travel expectations</label><div class="sw"><select id="f-trav" onchange="fc()"><option>None</option><option>Occasional (&lt;10%)</option><option>Moderate (10–25%)</option><option>Frequent (25%+)</option></select></div></div>
+    </div></div>
+  </div>
+
+  <!-- 10 APPLICATION SCREENING QUESTIONS -->
+  <div class="sec" id="s10">
+    <div class="sec-hdr" onclick="togSec('s10')"><div class="sec-hdr-l"><span class="snum">10 ·</span><span class="stitle">Application Screening Questions</span></div><span class="chev">▾</span></div>
+    <div class="sec-body">
+      <div class="ai-gen-bar" style="margin-bottom:14px">
+        <div>
+          <div class="ai-gen-txt">✦ AI-Generated Yes/No Knockout Questions</div>
+          <div class="ai-gen-sub">Simple yes/no questions shown on the application — generated from the JD, must-haves, and role context.</div>
+        </div>
+        <button class="bgen" id="btn-genq" onclick="genScreeningQs()">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 1v3M8 12v3M1 8h3M12 8h3M3.22 3.22l2.12 2.12M10.66 10.66l2.12 2.12M3.22 12.78l2.12-2.12M10.66 5.34l2.12-2.12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Generate Questions
+        </button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr auto auto auto;gap:8px;padding:0 2px;margin-bottom:4px">
+        <div style="font-size:10px;font-weight:700;color:var(--g3);letter-spacing:.5px;text-transform:uppercase">Question</div>
+        <div style="font-size:10px;font-weight:700;color:var(--g3);letter-spacing:.5px;text-transform:uppercase">Qualifying Answer</div>
+        <div style="font-size:10px;font-weight:700;color:var(--g3);letter-spacing:.5px;text-transform:uppercase">Knockout</div>
+        <div></div>
+      </div>
+      <div class="ynq-list" id="ynq-list"></div>
+      <button class="ynq-add" onclick="addYNQ('','yes',false)">
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Add Question
+      </button>
+      <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field">
+          <label>Recruiter phone screen questions <span class="aib" id="b-screenq" style="display:none">✦ AI</span></label>
+          <textarea id="f-screenq" placeholder="Questions + guidance on what strong answers look like…" oninput="fc()"></textarea>
+        </div>
+        <div class="field">
+          <label>Alternative / similar titles to source <span class="aib" id="b-alt" style="display:none">✦ AI</span></label>
+          <textarea id="f-alt" style="min-height:70px" placeholder="e.g. Staff Engineer, Principal Engineer…" oninput="fc()"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 11 CANDIDATE EXPERIENCE -->
+  <div class="sec" id="s11">
+    <div class="sec-hdr" onclick="togSec('s11')"><div class="sec-hdr-l"><span class="snum">11 ·</span><span class="stitle">Candidate Experience</span></div><span class="chev">▾</span></div>
+    <div class="sec-body"><div class="grid">
+      <div class="field full">
+        <span class="pill-lbl">Interview format preference</span>
+        <div class="pill-grp" id="fmt-pills">
+          <span class="pill" onclick="tp(this)">Virtual</span><span class="pill" onclick="tp(this)">In-person</span><span class="pill" onclick="tp(this)">Hybrid</span>
+        </div>
+      </div>
+      <div class="field"><label>Take-home assessment?</label><div class="sw"><select id="f-assess" onchange="fc()"><option>No</option><option>Yes</option></select></div></div>
+      <div class="field"><label>Candidate response SLA</label><div class="sw"><select id="f-csla" onchange="fc()"><option>24 hours</option><option>48 hours</option><option>72 hours</option></select></div></div>
+      <div class="field full"><label>Sell points / EVP</label><textarea id="f-evp" placeholder="What gets candidates excited about this role and CoreWeave?" oninput="fc()"></textarea></div>
+    </div></div>
+  </div>
+
+  <!-- 12 INTERVIEW PLAN -->
+  <div class="sec" id="s13">
+    <div class="sec-hdr" onclick="togSec('s13')"><div class="sec-hdr-l"><span class="snum">12 ·</span><span class="stitle">Interview Plan</span></div><span class="chev">▾</span></div>
+    <div class="sec-body">
+      <p style="font-size:12px;color:var(--g2);margin-bottom:10px">Interviewer names typed here flow into Competency Theme personas below and drive Glean-powered tailored questions in the Interview Guide. The Focus/Notes column is for you and the HM to specify what each interviewer should dig into — this is <strong>not AI-filled</strong>.</p>
+      <div class="itbl-wrap">
+        <div class="itbl-row itbl-hdr">
+          <div class="drag-col"></div>
+          <div class="itbl-cell">Stage</div>
+          <div class="itbl-cell">Interviewer(s)</div>
+          <div class="itbl-cell">Duration</div>
+          <div class="itbl-cell">Competency Focus / Notes</div>
+          <div class="itbl-cell"></div>
+        </div>
+        <div id="itbody"></div>
+      </div>
+      <div class="add-bar">
+        <button class="add-btn add-preset" onclick="togglePresets(event)">▾ Add from presets</button>
+        <div class="presets-menu" id="presets-menu">
+          <span class="preset-chip" onclick="addRow('Recruiter Screen','30 min','','');closePresets()">Recruiter Screen</span>
+          <span class="preset-chip" onclick="addRow('HM Interview','45 min','','');closePresets()">HM Interview</span>
+          <span class="preset-chip" onclick="addRow('Technical Interview','60 min','','');closePresets()">Technical</span>
+          <span class="preset-chip" onclick="addRow('Panel — Round 1','60 min','','');closePresets()">Panel Rd 1</span>
+          <span class="preset-chip" onclick="addRow('Panel — Round 2','60 min','','');closePresets()">Panel Rd 2</span>
+          <span class="preset-chip" onclick="addRow('Executive Interview','30 min','','');closePresets()">Executive</span>
+          <span class="preset-chip" onclick="addRow('Take-Home Assessment','N/A','','');closePresets()">Take-Home</span>
+          <span class="preset-chip" onclick="addRow('Offer Call','30 min','','');closePresets()">Offer Call</span>
+        </div>
+        <button class="add-btn add-custom" onclick="addRow('','30 min','','')">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Custom Stage
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 13 COMPETENCY THEMES (after interview plan) -->
+  <div class="sec" id="s12">
+    <div class="sec-hdr" onclick="togSec('s12')"><div class="sec-hdr-l"><span class="snum">13 ·</span><span class="stitle">Competency Themes</span></div><span class="chev">▾</span></div>
+    <div class="sec-body">
+      <p style="font-size:12px;color:var(--g2);margin-bottom:12px">Generated from the interview plan stages, interviewer names, intake notes, and JD. Drag to re-rank. Edit inline. Stage and persona dropdowns reflect the live interview plan above.</p>
+      <div class="comp-panel">
+        <div class="comp-hdr">
+          <span class="comp-title">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v3M8 12v3M1 8h3M12 8h3M3.22 3.22l2.12 2.12M10.66 10.66l2.12 2.12M3.22 12.78l2.12-2.12M10.66 5.34l2.12-2.12" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Competency Themes
+          </span>
+          <button class="btn-inv" id="btn-comp" onclick="genComp()">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 1v3M8 12v3M1 8h3M12 8h3M3.22 3.22l2.12 2.12M10.66 10.66l2.12 2.12M3.22 12.78l2.12-2.12M10.66 5.34l2.12-2.12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Generate &amp; Rank
+          </button>
+        </div>
+        <div class="comp-body">
+          <p class="comp-empty" id="comp-empty">Fill in role details and interview plan above, then click "Generate &amp; Rank".</p>
+          <div class="comp-list" id="comp-list" style="display:none"></div>
+          <button class="comp-add-btn" id="comp-add-btn" style="display:none" onclick="addCompCard({name:'New Competency',description:'Describe what to assess and how to evaluate it…',stage:'',persona:''})">
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Add Custom Theme
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 14 OUTREACH GENERATOR -->
+  <div class="sec" id="s14">
+    <div class="sec-hdr" onclick="togSec('s14')"><div class="sec-hdr-l"><span class="snum">14 ·</span><span class="stitle">Outreach Generator</span></div><span class="chev">▾</span></div>
+    <div class="sec-body">
+      <div class="out-tabs">
+        <button class="out-tab on" onclick="switchOutTab('inmail',this)">✉️ LinkedIn InMail</button>
+        <button class="out-tab" onclick="switchOutTab('gem',this)">💎 Gem Sequence</button>
+      </div>
+      <div class="out-panel on" id="out-inmail">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-size:12px;font-weight:600;color:var(--dark)">LinkedIn InMail Template</div>
+          <button class="bgen" id="btn-inmail" onclick="genInmail()">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 1v3M8 12v3M1 8h3M12 8h3M3.22 3.22l2.12 2.12M10.66 10.66l2.12 2.12M3.22 12.78l2.12-2.12M10.66 5.34l2.12-2.12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Generate InMail
+          </button>
+        </div>
+        <div class="out-box">
+          <div class="out-box-hdr"><span class="out-box-title">Subject Line</span><button class="cbtn" onclick="copyText('inmail-subj',this)">Copy</button></div>
+          <div class="out-box-body" id="inmail-subj" style="color:var(--g3);font-style:italic">Click "Generate InMail" to create your template</div>
+          <div class="out-box-hdr" style="border-top:1px solid var(--g5)"><span class="out-box-title">Body</span><button class="cbtn" onclick="copyText('inmail-body',this)">Copy</button></div>
+          <div class="out-box-body" id="inmail-body"></div>
+        </div>
+        <div class="row-btns" id="inmail-actions" style="display:none">
+          <button class="cbtn" onclick="copyFullInmail()">📋 Copy Full InMail</button>
+        </div>
+      </div>
+      <div class="out-panel" id="out-gem">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-size:12px;font-weight:600;color:var(--dark)">Gem Outreach Sequence</div>
+          <button class="bgen" id="btn-gem" onclick="genGemSeq()">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 1v3M8 12v3M1 8h3M12 8h3M3.22 3.22l2.12 2.12M10.66 10.66l2.12 2.12M3.22 12.78l2.12-2.12M10.66 5.34l2.12-2.12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Generate Sequence
+          </button>
+        </div>
+        <div id="gem-seq-body"><div style="text-align:center;padding:24px;font-size:12px;color:var(--g3);font-style:italic">Click "Generate Sequence" to create your Gem outreach steps</div></div>
+        <div class="row-btns" id="gem-actions" style="display:none">
+          <button class="cbtn" onclick="copyFullGem()">📋 Copy All Steps</button>
+          <a id="gem-link" href="#" target="_blank" rel="noopener" style="display:none;font-family:var(--font);font-size:11px;font-weight:700;padding:5px 12px;border-radius:6px;border:1.5px solid var(--purple);color:var(--purple);background:#fff;text-decoration:none;align-items:center;gap:4px">💎 Open in Gem</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- /tab-form -->
+
+<!-- ═══════════════════ TAB: INTERVIEW GUIDE ═══════════════════ -->
+<div id="tab-guide" style="display:none">
+  <div style="padding:14px 40px;background:var(--cal);border-bottom:1px solid var(--g5);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+    <div>
+      <div style="font-size:15px;font-weight:800;color:var(--dark);margin-bottom:2px">🎯 Interview Guide</div>
+      <div style="font-size:12px;color:var(--g2)">Per-stage questions with 4-point rubrics. Interviewers are looked up via Glean so questions reflect their actual background and focus area. Edit inline, add custom questions, export as a branded doc.</div>
+    </div>
+    <button class="bgen" id="btn-gen-all" onclick="genAllStages()">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 1v3M8 12v3M1 8h3M12 8h3M3.22 3.22l2.12 2.12M10.66 10.66l2.12 2.12M3.22 12.78l2.12-2.12M10.66 5.34l2.12-2.12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Generate All Stages
+    </button>
+  </div>
+  <div class="ig-layout">
+    <div class="ig-sidebar" id="ig-sidebar"></div>
+    <div class="ig-main" id="ig-main">
+      <div id="ig-content"><div class="ig-empty">Select a stage from the left to view or generate questions.</div></div>
+    </div>
+  </div>
+  <div class="ig-export-bar">
+    <span class="ig-export-note">Export the full interview guide with all stages and rubrics</span>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-ghost" onclick="exportGuideHTML()">Download / Print</button>
+      <button class="btn btn-outline" style="border-color:#0052CC;color:#0052CC" onclick="exportGuideConfluence()">Save to Confluence</button>
+      <button class="btn btn-outline" onclick="exportGuideDrive()">Save to Drive</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ TAB: RECRUITER BRIEF ═══════════════════ -->
+<div id="tab-pitch" style="display:none">
+  <div class="pitch-intro">
+    <h2>✦ Internal Recruiter Brief</h2>
+    <p>Runs 6 targeted Glean searches — hiring manager profile, full org chain to C-suite, team Confluence pages, related JDs in Drive, company news — then synthesizes everything with the intake form into a fully researched brief.</p>
+  </div>
+  <div class="pitch-ctrl">
+    <div class="chip-row" id="pitch-chips"><span class="chip empty">Fill in the intake form first</span></div>
+    <button class="btn-pitch" id="btn-pitch" onclick="genPitch()">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v3M8 12v3M1 8h3M12 8h3M3.22 3.22l2.12 2.12M10.66 10.66l2.12 2.12M3.22 12.78l2.12-2.12M10.66 5.34l2.12-2.12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Generate Brief
+    </button>
+  </div>
+  <div class="pitch-out">
+    <div id="pitch-empty" class="pitch-empty">
+      <div class="pitch-empty-icon">✦</div>
+      <div class="pitch-empty-title">Ready to generate your Recruiter Brief</div>
+      <div class="pitch-empty-sub">Fill in at least a role title and team, then click "Generate Brief" above.</div>
+    </div>
+    <div id="pitch-doc" style="display:none"></div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <span class="foot-note">Questions? → <a href="#">#help-recruiting</a></span>
+  <div class="btn-grp">
+    <button class="btn btn-ghost"    onclick="printForm()">Print / PDF</button>
+    <button class="btn btn-outline"  style="border-color:#0052CC;color:#0052CC" onclick="saveToConfluence()">Save to Confluence</button>
+    <button class="btn btn-outline"  id="btn-gdoc" onclick="saveToGDrive()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M14 2v6h6M9 13h6M9 17h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Save to Drive
+    </button>
+    <button class="btn btn-primary"  id="btn-save" onclick="manualSave()">Save Form</button>
+  </div>
+</div>
+</div><!-- /page -->
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   CONSTANTS  — all declared before any function or IIFE runs
+═══════════════════════════════════════════════════════════════════ */
+const G   = id => document.getElementById(id);
+const QS  = s  => document.querySelector(s);
+const QA  = s  => [...document.querySelectorAll(s)];
+const V   = id => G(id)?.value || '';
+const SV  = (id, v) => { const e = G(id); if (e && v != null) e.value = v; };
+const pillsOf  = gid  => QA(`#${gid} .pill.on`).map(p => p.textContent.trim());
+const radioV   = name => { const c = QS(`input[name="${name}"]:checked`); return c ? c.closest('label')?.textContent?.trim() || '' : ''; };
+
+const SK      = 'cw-intake-v8';
+const MODEL   = 'claude-sonnet-4-20250514';
+const GLEAN   = { type: 'url', url: 'https://coreweave-be.glean.com/mcp/default', name: 'glean' };
+const GDRIVE  = { type: 'url', url: 'https://gdrive.mcp.claude.com/mcp',          name: 'gdrive' };
+const ATLS    = { type: 'url', url: 'https://mcp.atlassian.com/v1/mcp',           name: 'atlassian' };
+
+const TRACKED = ['f-title','f-level','f-team','f-hm','f-overview','f-mh','f-nth',
+                 'f-tools','f-resp','f-sell','f-alt','f-screenq','f-ramp','f-suc'];
+const STAGE_OPTS    = ['Recruiter Screen','HM Interview','Technical Interview',
+                       'Panel — Round 1','Panel — Round 2','Executive Interview',
+                       'Take-Home Assessment','Offer Call'];
+const DUR_OPTS      = ['30 min','45 min','60 min','90 min','N/A'];
+const BASE_PERSONAS = ['Recruiter','Hiring Manager','Technical Interviewer',
+                       'Panel Interviewer','Executive','Any'];
+const IG_DEFAULTS   = [
+  { id: 'recruiter', label: 'Recruiter Screen',   duration: '30 min' },
+  { id: 'hm',        label: 'HM Interview',        duration: '45 min' },
+  { id: 'technical', label: 'Technical Interview', duration: '60 min' },
+  { id: 'panel1',    label: 'Panel — Round 1',     duration: '60 min' },
+  { id: 'panel2',    label: 'Panel — Round 2',     duration: '60 min' },
+  { id: 'executive', label: 'Executive Interview', duration: '30 min' },
+];
+
+let _saveTimer   = null;
+let _dragRow     = null;
+let _dragCard    = null;
+let _inmail      = null;
+let _gemseq      = null;
+let _brief       = null;
+let _igData      = {};   // { stageId: [{q, comp, type, rubric}] }
+let _igActive    = 'recruiter';
+
+/* ═══════════════════════════════════════════════════════════════════
+   BOOT
+═══════════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', async () => {
+  G('date-stamp').textContent = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  initTable();
+  initIGSidebar();
+  addYNQ('', 'yes', false);
+  await loadForm();
+  updateProgress();
+  updateChips();
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   TAB SWITCHING
+═══════════════════════════════════════════════════════════════════ */
+function switchTab(t) {
+  ['form', 'guide', 'pitch'].forEach(id => {
+    G('tab-' + id).style.display = t === id ? '' : 'none';
+    G('tb-' + id).classList.toggle('on', t === id);
+  });
+  if (t === 'pitch') updateChips();
+  if (t === 'guide') renderIGSidebar();
+}
+function switchOutTab(name, btn) {
+  QA('.out-tab').forEach(b => b.classList.remove('on'));
+  QA('.out-panel').forEach(p => p.classList.remove('on'));
+  btn.classList.add('on');
+  G('out-' + name).classList.add('on');
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SECTIONS / PILLS
+═══════════════════════════════════════════════════════════════════ */
+function togSec(sid) { G(sid).classList.toggle('closed'); }
+function tp(el) { el.classList.toggle('on'); fc(); }
+function restorePills(gid, vals) {
+  if (!Array.isArray(vals)) return;
+  QA(`#${gid} .pill`).forEach(p => { if (vals.includes(p.textContent.trim())) p.classList.add('on'); });
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DATA FLOW — top-level fields propagate into interview plan
+═══════════════════════════════════════════════════════════════════ */
+function syncRecruiterToPlan() {
+  const name = V('f-rec').trim();
+  QA('#itbody .itbl-row').forEach(row => {
+    const stage = row.querySelector('select')?.value || '';
+    if (stage === 'Recruiter Screen') {
+      const inp = row.querySelectorAll('.td-in')[0];
+      if (inp && !inp.dataset.userEdited) inp.value = name;
+    }
+  });
+  updatePersonaDropdowns();
+}
+function syncHMToplan() {
+  const name = V('f-hm').trim();
+  QA('#itbody .itbl-row').forEach(row => {
+    const stage = row.querySelector('select')?.value || '';
+    if (stage === 'HM Interview') {
+      const inp = row.querySelectorAll('.td-in')[0];
+      if (inp && !inp.dataset.userEdited) inp.value = name;
+    }
+  });
+  updatePersonaDropdowns();
+}
+function syncPlanFromHeader() {
+  // nothing further needed — stage/persona dropdowns refresh on next genComp call
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PROGRESS + AUTOSAVE
+═══════════════════════════════════════════════════════════════════ */
+function fc() {
+  updateProgress();
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => saveForm().catch(() => {}), 1500);
+}
+function updateProgress() {
+  const n   = TRACKED.filter(id => { const e = G(id); return e && e.value && e.value.trim(); }).length;
+  const pct = Math.round(n / TRACKED.length * 100);
+  G('prog-pct').textContent = pct + '%';
+  G('prog-fill').style.width = pct + '%';
+}
+function flashSaved() {
+  const e = G('save-pill'); e.classList.add('on');
+  setTimeout(() => e.classList.remove('on'), 2500);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DATA COLLECTION
+═══════════════════════════════════════════════════════════════════ */
+function getYNQs() {
+  return QA('#ynq-list .ynq-row').map(row => ({
+    q:   row.querySelector('.ynq-input')?.value || '',
+    ans: row.querySelector('.ynq-badge.yes')?.classList.contains('on') ? 'yes' : 'no',
+    ko:  row.querySelector('.ynq-ko')?.classList.contains('on') || false,
+  }));
+}
+function getCompThemes() {
+  return QA('#comp-list .comp-card').map(c => ({
+    name:        c.querySelector('.comp-name-in')?.value || '',
+    description: c.querySelector('.comp-desc-in')?.value || '',
+    stage:       c.querySelector('.stage-sel')?.value || '',
+    persona:     c.querySelector('.persona-sel')?.value || '',
+  }));
+}
+function getPlanRows() {
+  return QA('#itbody .itbl-row').map(row => {
+    const sels = row.querySelectorAll('select');
+    const ins  = row.querySelectorAll('.td-in');
+    return {
+      stage:       sels[0]?.value || '',
+      interviewer: (ins[0]?.value || '').trim(),
+      duration:    sels[1]?.value || '',
+      focus:       (ins[1]?.value || '').trim(),
+    };
+  }).filter(r => r.stage);
+}
+function collectData() {
+  return {
+    title:     V('f-title'), level:   V('f-level'), team:    V('f-team'),
+    hm:        V('f-hm'),    rec:     V('f-rec'),   hc:      V('f-hc'),
+    jdUrl:     V('f-jd'),    gh:      V('f-gh'),    emptype: V('f-emptype'),
+    teamsize:  V('f-teamsize'),
+    backfill:  radioV('backfill'), firsthire: radioV('firsthire'),
+    locs:      pillsOf('loc-pills'),
+    overview:  V('f-overview'), problem: V('f-problem'), sell:   V('f-sell'),
+    resp:      V('f-resp'),     sixmo:   V('f-sixmo'),   cross:  V('f-cross'),
+    reports:   radioV('reports'), rcnt:  V('f-rcnt'),
+    mh:        V('f-mh'), nth:  V('f-nth'), tools:   V('f-tools'),
+    kickoff:   V('f-kickoff'), sync:  V('f-sync'),  pipe:   V('f-pipe'),
+    att:       V('f-att'),     fbsla: V('f-fbsla'), esc:    V('f-esc'),
+    srcs:      pillsOf('src-pills'), gem: V('f-gem'), dei:  V('f-dei'),
+    tgt:       V('f-tgt'), away: V('f-away'),
+    ttf:       V('f-ttf'), sub:  V('f-sub'), dl:  V('f-dl'), urg: V('f-urg'), suc: V('f-suc'),
+    ramp:      V('f-ramp'), obown: V('f-obown'), trav: V('f-trav'),
+    ynqs:      getYNQs(), screenq: V('f-screenq'), alt: V('f-alt'),
+    fmt:       pillsOf('fmt-pills'), assess: V('f-assess'), csla: V('f-csla'), evp: V('f-evp'),
+    compThemes: getCompThemes(),
+    planRows:   getPlanRows(),
+    igData:     _igData,
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   STORAGE
+═══════════════════════════════════════════════════════════════════ */
+async function saveForm() {
+  await window.storage.set(SK, JSON.stringify(collectData()));
+  flashSaved();
+}
+async function manualSave() {
+  const btn = G('btn-save'), orig = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = spin() + ' Saving…';
+  try {
+    await saveForm();
+    btn.innerHTML = '✓ Saved';
+    btn.style.cssText = 'background:var(--green);color:#fff;border-color:var(--green)';
+    setTimeout(() => { btn.innerHTML = orig; btn.style.cssText = ''; btn.disabled = false; }, 2000);
+  } catch(e) {
+    toast('Save failed: ' + e.message, 'error');
+    btn.innerHTML = orig; btn.disabled = false;
+  }
+}
+async function loadForm() {
+  try {
+    const r = await window.storage.get(SK);
+    if (r?.value) restoreData(JSON.parse(r.value));
+  } catch(e) {}
+}
+function restoreData(d) {
+  if (!d) return;
+  ['title','level','team','hm','hc','rec','gh','emptype','teamsize',
+   'overview','problem','sell','resp','sixmo','cross','rcnt',
+   'mh','nth','tools','kickoff','sync','pipe','att','fbsla','esc',
+   'gem','dei','tgt','away','ttf','sub','dl','urg','suc',
+   'ramp','obown','trav','screenq','alt','assess','csla','evp'
+  ].forEach(k => SV('f-' + k, d[k]));
+  if (d.jdUrl) { SV('f-jd', d.jdUrl); G('btn-analyze').disabled = false; }
+  restorePills('loc-pills', d.locs);
+  restorePills('src-pills', d.srcs);
+  restorePills('fmt-pills', d.fmt);
+  if (Array.isArray(d.ynqs) && d.ynqs.length) {
+    G('ynq-list').innerHTML = '';
+    d.ynqs.forEach(q => addYNQ(q.q, q.ans, q.ko));
+  }
+  if (Array.isArray(d.compThemes) && d.compThemes.length) {
+    G('comp-list').innerHTML = '';
+    G('comp-list').style.display = 'flex';
+    G('comp-empty').style.display = 'none';
+    G('comp-add-btn').style.display = 'inline-flex';
+    d.compThemes.forEach((t, i) => addCompCard(t, i + 1));
+  }
+  if (d.igData) _igData = d.igData;
+  updateProgress();
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   API HELPERS
+═══════════════════════════════════════════════════════════════════ */
+function spin() {
+  return '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="animation:spin 1s linear infinite;flex-shrink:0"><path d="M8 2a6 6 0 1 1-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+}
+function spark() {
+  return '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="flex-shrink:0"><path d="M8 1v3M8 12v3M1 8h3M12 8h3M3.22 3.22l2.12 2.12M10.66 10.66l2.12 2.12M3.22 12.78l2.12-2.12M10.66 5.34l2.12-2.12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+}
+function setBL(bid, loading, label) {
+  const b = G(bid); if (!b) return;
+  b.disabled = loading; b.innerHTML = (loading ? spin() : spark()) + ' ' + label;
+}
+async function claude(payload) {
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: MODEL, max_tokens: payload.max_tokens || 2400, ...payload }),
+  });
+  if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error?.message || `API ${r.status}`); }
+  const data = await r.json();
+  return (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
+}
+function parseJ(raw) {
+  const clean = raw.replace(/```json|```/g, '').trim();
+  const start = clean.search(/[\[{]/);
+  if (start === -1) throw new Error('No JSON found in response');
+  let depth = 0, inStr = false, escape = false, end = -1;
+  for (let i = start; i < clean.length; i++) {
+    const c = clean[i];
+    if (escape)               { escape = false; continue; }
+    if (c === '\\' && inStr)  { escape = true;  continue; }
+    if (c === '"')            { inStr = !inStr;  continue; }
+    if (inStr)                continue;
+    if (c === '{' || c === '[') depth++;
+    if (c === '}' || c === ']') { depth--; if (depth === 0) { end = i; break; } }
+  }
+  let s = end !== -1 ? clean.slice(start, end + 1) : clean.slice(start);
+  if (end === -1) {
+    s = s.replace(/,?\s*"[^"]*"\s*:\s*"[^"]*$/, '').replace(/,?\s*"[^"]*"\s*:\s*$/, '');
+    s += ']'.repeat(Math.max(0, (s.match(/\[/g)||[]).length - (s.match(/\]/g)||[]).length));
+    s += '}'.repeat(Math.max(0, (s.match(/\{/g)||[]).length - (s.match(/\}/g)||[]).length));
+  }
+  s = s.replace(/"((?:[^"\\]|\\.)*)"/g, (_, inner) => '"' + inner.replace(/\n/g,'\\n').replace(/\r/g,'\\r').replace(/\t/g,'\\t') + '"');
+  try { return JSON.parse(s); }
+  catch(e) { return JSON.parse(s.replace(/,(\s*[}\]])/g, '$1')); }
+}
+function showBadge(id) { const e = G(id); if (e) e.style.display = 'inline-flex'; }
+function btnFlash(btn, label, color = 'var(--green)') {
+  const orig = btn.textContent, origC = btn.style.color;
+  btn.textContent = label; btn.style.color = color;
+  setTimeout(() => { btn.textContent = orig; btn.style.color = origC; }, 1500);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DOWNLOAD HELPER  (no window.open — works from sandboxed iframes)
+═══════════════════════════════════════════════════════════════════ */
+function downloadHTML(html, filename) {
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename; a.style.display = 'none';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+function showExtLink(url, label, color) {
+  const old = G('ext-link-bar'); if (old) old.remove();
+  const bar = document.createElement('div');
+  bar.id = 'ext-link-bar'; bar.className = 'ext-bar';
+  bar.style.cssText += `;border:1px solid ${color}`;
+  bar.innerHTML = `<span style="color:${color};font-weight:600">✓ Saved to ${label}</span>
+    <a href="${url}" target="_blank" rel="noopener" style="border:1.5px solid ${color};color:${color}">Open ↗</a>`;
+  const footer = QS('.footer'); if (footer) footer.insertAdjacentElement('beforebegin', bar);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   JD ANALYSIS
+═══════════════════════════════════════════════════════════════════ */
+function onJdInput()    { G('btn-analyze').disabled = !V('f-jd').trim(); }
+function onPasteInput() { G('btn-paste').disabled   = !G('f-jdpaste').value.trim(); }
+function applyField(fid, v, bid) {
+  if (!v) return;
+  const e = G(fid); if (!e) return;
+  if (e.tagName === 'SELECT') {
+    const o = Array.from(e.options).find(o => o.value.toLowerCase() === v.toLowerCase() || o.text.toLowerCase().includes(v.toLowerCase()));
+    if (o) { e.value = o.value; e.classList.add('ai-f'); }
+  } else { e.value = v; e.classList.add('ai-f'); }
+  if (bid) showBadge(bid);
+}
+function applyParsed(p) {
+  if (!p) return;
+  applyField('f-title',   p.title,            'b-title');
+  applyField('f-level',   p.level,            'b-level');
+  applyField('f-team',    p.team,             'b-team');
+  applyField('f-overview',p.overview,         'b-overview');
+  applyField('f-mh',      p.must_have,        'b-mh');
+  applyField('f-nth',     p.nice_to_have,     'b-nth');
+  applyField('f-tools',   p.tools,            'b-tools');
+  applyField('f-alt',     p.alt_titles,       'b-alt');
+  applyField('f-screenq', p.screen_questions, 'b-screenq');
+  showBadge('b-jd');
+  if (Array.isArray(p.screening_ynq) && p.screening_ynq.length) {
+    G('ynq-list').innerHTML = '';
+    p.screening_ynq.forEach(q => addYNQ(q.question, q.qualifying_answer || 'yes', q.knockout || false));
+  }
+  fillCompetencies(p);
+  fc();
+}
+const JD_SYS = `You are a recruiting analyst at CoreWeave. Analyze the JD and return ONLY valid JSON:
+{"title":"","level":"IC1-IC6 or M1-M3","team":"","overview":"2-3 sentences","must_have":"• item\\n• item","nice_to_have":"• item","tools":"comma-sep tools","alt_titles":"comma-sep alt titles","screen_questions":"1. q (guidance)\\n2. q","screening_ynq":[{"question":"Do you have X?","qualifying_answer":"yes","knockout":true}],"comp_screen":"","comp_hm":"","comp_tech":"","comp_p1":"","comp_p2":"","comp_exec":"","summary":"4-6 sentence narrative"}`;
+async function analyzeJD() {
+  const url = V('f-jd').trim(); if (!url) return;
+  const ap = G('apanel'), ab = G('apanel-body');
+  G('err-box').classList.remove('on'); ap.classList.add('on'); ab.textContent = ''; ab.classList.add('streaming');
+  setBL('btn-analyze', true, 'Fetching via Glean…');
+  try {
+    const raw = await claude({ system: JD_SYS, messages: [{ role: 'user', content: `Use Glean read_document to fetch and analyze this JD:\n${url}` }], mcp_servers: [GLEAN] });
+    const p = parseJ(raw);
+    applyParsed(p);
+    ab.classList.remove('streaming');
+    ab.textContent = p.summary || 'Analysis complete — AI-suggested fields highlighted.';
+    setBL('btn-analyze', false, 'Re-analyze');
+  } catch(e) {
+    ab.classList.remove('streaming'); ap.classList.remove('on');
+    G('paste-fb').style.display = 'block';
+    setBL('btn-analyze', false, 'Analyze JD'); G('btn-analyze').disabled = false;
+  }
+}
+async function analyzeFromPaste() {
+  const txt = G('f-jdpaste').value.trim(); if (!txt) return;
+  const ap = G('apanel'), ab = G('apanel-body');
+  G('err-box').classList.remove('on'); ap.classList.add('on'); ab.textContent = ''; ab.classList.add('streaming');
+  setBL('btn-paste', true, 'Analyzing…');
+  try {
+    const raw = await claude({ system: JD_SYS, messages: [{ role: 'user', content: `Analyze this JD:\n\n${txt.slice(0, 12000)}` }] });
+    const p = parseJ(raw);
+    applyParsed(p);
+    ab.classList.remove('streaming'); ab.textContent = p.summary || 'Analysis complete.';
+    G('paste-fb').style.display = 'none';
+  } catch(e) {
+    ab.classList.remove('streaming'); ap.classList.remove('on');
+    G('err-box').textContent = 'Analysis failed: ' + e.message; G('err-box').classList.add('on');
+  }
+  setBL('btn-paste', false, 'Analyze Pasted Text');
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   APPLICATION SCREENING QUESTIONS (Yes / No)
+═══════════════════════════════════════════════════════════════════ */
+function addYNQ(question = '', ans = 'yes', knockout = false) {
+  const list = G('ynq-list');
+  const row  = document.createElement('div'); row.className = 'ynq-row';
+  row.innerHTML = `
+    <input class="ynq-input" type="text" placeholder="e.g. Do you have ASC 606 experience from a publicly traded company?" value="${question.replace(/"/g, '&quot;')}" oninput="fc()">
+    <div style="display:flex;gap:4px">
+      <button class="ynq-badge yes ${ans === 'yes' ? 'on' : ''}" onclick="toggleYNQAns(this,'yes')">Yes</button>
+      <button class="ynq-badge no ${ans === 'no' ? 'on' : ''}"  onclick="toggleYNQAns(this,'no')">No</button>
+    </div>
+    <button class="ynq-ko ${knockout ? 'on' : ''}" onclick="this.classList.toggle('on');this.textContent=this.classList.contains('on')?'🚫 Knockout':'Knockout?';fc()">${knockout ? '🚫 Knockout' : 'Knockout?'}</button>
+    <button class="ynq-del" onclick="this.closest('.ynq-row').remove();fc()">×</button>`;
+  list.appendChild(row);
+}
+function toggleYNQAns(btn, ans) {
+  btn.closest('.ynq-row').querySelectorAll('.ynq-badge').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on'); fc();
+}
+async function genScreeningQs() {
+  const d = collectData();
+  setBL('btn-genq', true, 'Generating…');
+  try {
+    const raw = await claude({ max_tokens: 900, messages: [{ role: 'user', content:
+      `Senior recruiter at CoreWeave. Generate 5-7 yes/no application screening questions for candidates. Simple, specific, binary.
+Return ONLY valid JSON array:
+[{"question":"Do you have [specific req]?","qualifying_answer":"yes","knockout":true}]
+Role: ${d.title} | Level: ${d.level} | Team: ${d.team}
+Must-haves: ${d.mh}
+Tools: ${d.tools}
+Overview: ${d.overview}
+Good examples: work authorization, years in specific domain, specific tech/cert, public company experience, specific industry background, relocation.` }] });
+    const qs = parseJ(raw);
+    if (!Array.isArray(qs) || !qs.length) throw new Error('No questions returned');
+    G('ynq-list').innerHTML = '';
+    qs.forEach(q => addYNQ(q.question, q.qualifying_answer || 'yes', q.knockout || false));
+    fc(); toast('Screening questions generated', 'success');
+  } catch(e) { toast('Generation failed: ' + e.message, 'error'); }
+  setBL('btn-genq', false, 'Regenerate Questions');
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   INTERVIEW PLAN
+═══════════════════════════════════════════════════════════════════ */
+function getInterviewerNames() {
+  const names = new Set();
+  QA('#itbody .itbl-row').forEach(row => {
+    (row.querySelectorAll('.td-in')[0]?.value || '').split(/[,\/\n]/).forEach(n => { const t = n.trim(); if (t) names.add(t); });
+  });
+  return [...names];
+}
+function updatePersonaDropdowns() {
+  const combined = [...new Set([...BASE_PERSONAS, ...getInterviewerNames().filter(n => !BASE_PERSONAS.includes(n))])];
+  QA('#comp-list .persona-sel').forEach(sel => {
+    const cur = sel.value;
+    sel.innerHTML = combined.map(p => `<option${p === cur ? ' selected' : ''}>${p}</option>`).join('');
+  });
+}
+function updateStageDropdowns() {
+  const planStages = [...new Set(QA('#itbody .itbl-row').map(r => r.querySelector('select')?.value || '').filter(Boolean))];
+  const stages     = planStages.length ? planStages : STAGE_OPTS;
+  QA('#comp-list .stage-sel').forEach(sel => {
+    const cur = sel.value;
+    sel.innerHTML = stages.map(s => `<option${s === cur ? ' selected' : ''}>${s}</option>`).join('');
+  });
+}
+function initTable() {
+  const hm  = V('f-hm').trim();
+  const rec = V('f-rec').trim();
+  [['Recruiter Screen',    '30 min', rec, 'ci-cs'],
+   ['HM Interview',        '45 min', hm,  'ci-hm'],
+   ['Technical Interview', '60 min', '',  'ci-tech'],
+   ['Panel — Round 1',     '60 min', '',  'ci-p1'],
+   ['Panel — Round 2',     '60 min', '',  'ci-p2'],
+   ['Executive Interview', '30 min', '',  'ci-exec'],
+  ].forEach(([stage, dur, interviewer, cid]) => addRow(stage, dur, interviewer, cid));
+}
+function addRow(stage = '', dur = '30 min', interviewer = '', cid = '') {
+  const tb  = G('itbody');
+  const so  = STAGE_OPTS.map(s => `<option${s === stage ? ' selected' : ''}>${s}</option>`).join('');
+  const dop = DUR_OPTS.map(d   => `<option${d === dur   ? ' selected' : ''}>${d}</option>`).join('');
+  const uid = cid || ('ci-' + Date.now() + Math.random().toString(36).slice(2, 5));
+  const row = document.createElement('div'); row.className = 'itbl-row'; row.draggable = true;
+  row.innerHTML = `
+    <div class="drag-col">⠿</div>
+    <div class="itbl-cell"><div class="sw-td"><select class="td-sel" onchange="fc();updateStageDropdowns()">${so}</select></div></div>
+    <div class="itbl-cell"><input class="td-in" type="text" value="${interviewer}" placeholder="Name(s)" oninput="this.dataset.userEdited='1';fc();updatePersonaDropdowns()"></div>
+    <div class="itbl-cell"><div class="sw-td"><select class="td-sel" onchange="fc()">${dop}</select></div></div>
+    <div class="itbl-cell"><input class="td-in" type="text" id="${uid}" placeholder="e.g. ASC 606 depth, system design, cross-functional leadership…" oninput="fc()"></div>
+    <div class="itbl-cell"><button class="rm-btn" onclick="this.closest('.itbl-row').remove();fc();updatePersonaDropdowns();updateStageDropdowns()" title="Remove">×</button></div>`;
+  row.addEventListener('dragstart', e  => { _dragRow = row; row.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+  row.addEventListener('dragend',   () => { row.classList.remove('dragging'); _dragRow = null; });
+  row.addEventListener('dragover',  e  => {
+    e.preventDefault();
+    if (!_dragRow || _dragRow === row) return;
+    const r = row.getBoundingClientRect();
+    G('itbody').insertBefore(_dragRow, e.clientY < r.top + r.height / 2 ? row : row.nextSibling);
+  });
+  tb.appendChild(row);
+  updatePersonaDropdowns();
+}
+function togglePresets(e) { e.stopPropagation(); G('presets-menu').classList.toggle('on'); }
+function closePresets()    { G('presets-menu').classList.remove('on'); }
+document.addEventListener('click', () => closePresets());
+
+/* ═══════════════════════════════════════════════════════════════════
+   COMPETENCY THEMES
+═══════════════════════════════════════════════════════════════════ */
+async function genComp() {
+  const btn = G('btn-comp'); btn.disabled = true; btn.innerHTML = spin() + ' Generating…';
+  const d   = collectData();
+  const planSummary = d.planRows.map(r =>
+    `${r.stage}${r.interviewer ? ' (' + r.interviewer + ')' : ''}${r.focus ? ' → Focus: ' + r.focus : ''}`
+  ).join('\n') || 'No plan defined yet';
+  try {
+    const raw    = await claude({ messages: [{ role: 'user', content:
+      `Senior recruiter at CoreWeave. Generate 6-8 competency themes mapped to the interview plan.
+Return ONLY JSON array:
+[{"name":"...","description":"1-2 sentence assessment guide","stage":"exact stage from plan","persona":"interviewer name or role","priority":1}]
+Role: ${d.title} | Level: ${d.level} | Team: ${d.team}
+Overview: ${d.overview}
+Must-haves: ${d.mh}
+Nice-to-haves: ${d.nth}
+Tools: ${d.tools}
+Responsibilities: ${d.resp}
+INTERVIEW PLAN (use these exact stages and names):
+${planSummary}` }] });
+    const themes = parseJ(raw);
+    if (!Array.isArray(themes) || !themes.length) throw new Error('No themes returned');
+    renderComp(themes); showBadge('b-comp');
+  } catch(e) { G('comp-empty').textContent = 'Error: ' + e.message; }
+  btn.disabled = false; btn.innerHTML = spark() + ' Re-generate';
+}
+function renderComp(themes) {
+  const list = G('comp-list'), empty = G('comp-empty');
+  if (!list || !Array.isArray(themes) || !themes.length) return;
+  empty.style.display = 'none'; list.style.display = 'flex'; list.innerHTML = '';
+  G('comp-add-btn').style.display = 'inline-flex';
+  [...themes].sort((a, b) => (a.priority || 0) - (b.priority || 0)).forEach((t, i) => addCompCard(t, i + 1));
+}
+function addCompCard(t = {}, rank = null) {
+  const list = G('comp-list'); if (!list) return;
+  list.style.display = 'flex'; G('comp-empty').style.display = 'none'; G('comp-add-btn').style.display = 'inline-flex';
+  const n         = rank || list.children.length + 1;
+  const planStages = [...new Set(QA('#itbody .itbl-row').map(r => r.querySelector('select')?.value || '').filter(Boolean))];
+  const stages     = planStages.length ? planStages : STAGE_OPTS;
+  const combined   = [...new Set([...BASE_PERSONAS, ...getInterviewerNames()])];
+  const stageOpts  = stages.map(s  => `<option${s  === (t.stage   || stages[0])    ? ' selected' : ''}>${s}</option>`).join('');
+  const personaOpts = combined.map(p => `<option${p === (t.persona || 'Recruiter') ? ' selected' : ''}>${p}</option>`).join('');
+  const card = document.createElement('div'); card.className = 'comp-card'; card.draggable = true;
+  card.innerHTML = `
+    <div class="comp-card-top">
+      <span class="drag-h">⠿</span>
+      <div class="comp-rank">${n}</div>
+      <div class="comp-fields">
+        <input class="comp-name-in" type="text" value="${(t.name || '').replace(/"/g, '&quot;')}" placeholder="Competency name" oninput="fc()">
+        <textarea class="comp-desc-in" placeholder="What to assess and how to evaluate it…" oninput="fc()">${t.description || ''}</textarea>
+        <div class="comp-meta">
+          <div class="sw-sm"><select class="comp-sel stage-sel"   onchange="fc()">${stageOpts}</select></div>
+          <div class="sw-sm"><select class="comp-sel persona-sel" onchange="fc()">${personaOpts}</select></div>
+        </div>
+      </div>
+      <button class="comp-del" onclick="this.closest('.comp-card').remove();updateCompRanks();fc()" title="Remove">×</button>
+    </div>`;
+  card.addEventListener('dragstart', () => { _dragCard = card; card.style.opacity = '.4'; });
+  card.addEventListener('dragend',   () => { card.style.opacity = '1'; _dragCard = null; updateCompRanks(); });
+  card.addEventListener('dragover',  e  => {
+    e.preventDefault();
+    if (!_dragCard || _dragCard === card) return;
+    const r = card.getBoundingClientRect();
+    G('comp-list').insertBefore(_dragCard, e.clientY < r.top + r.height / 2 ? card : card.nextSibling);
+  });
+  list.appendChild(card);
+}
+function updateCompRanks() { QA('#comp-list .comp-rank').forEach((e, i) => e.textContent = i + 1); }
+function fillCompetencies(p) {
+  const map = { comp_screen: 'ci-cs', comp_hm: 'ci-hm', comp_tech: 'ci-tech', comp_p1: 'ci-p1', comp_p2: 'ci-p2', comp_exec: 'ci-exec' };
+  Object.entries(map).forEach(([k, fid]) => { const e = G(fid); if (e && p[k]) { e.value = p[k]; e.classList.add('ai-f'); } });
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   OUTREACH
+═══════════════════════════════════════════════════════════════════ */
+async function genInmail() {
+  const d = collectData();
+  if (!d.title) { toast('Fill in role title first', 'error'); return; }
+  setBL('btn-inmail', true, 'Generating…');
+  G('inmail-subj').classList.add('streaming'); G('inmail-body').classList.add('streaming');
+  try {
+    const raw = await claude({ max_tokens: 700, messages: [{ role: 'user', content:
+      `Top recruiter at CoreWeave writing a LinkedIn InMail. Return ONLY JSON:
+{"subject":"compelling under 60 chars","body":"150-200 words, personalized hook, excitement, CTA, [First Name] placeholder"}
+Role: ${d.title} (${d.level}) | Team: ${d.team} | HM: ${d.hm}
+Overview: ${d.overview} | Must-haves: ${d.mh} | The Sell: ${d.sell} | EVP: ${d.evp} | Target: ${d.tgt}` }] });
+    const im = parseJ(raw);
+    _inmail = im;
+    G('inmail-subj').textContent = im.subject || ''; G('inmail-subj').style.fontStyle = ''; G('inmail-subj').style.color = '';
+    G('inmail-subj').classList.remove('streaming');
+    G('inmail-body').textContent = im.body || ''; G('inmail-body').classList.remove('streaming');
+    G('inmail-actions').style.display = 'flex';
+    toast('InMail generated', 'success');
+  } catch(e) {
+    G('inmail-subj').textContent = 'Failed: ' + e.message; G('inmail-subj').classList.remove('streaming');
+    G('inmail-body').classList.remove('streaming'); toast('Failed: ' + e.message, 'error');
+  }
+  setBL('btn-inmail', false, 'Regenerate InMail');
+}
+async function genGemSeq() {
+  const d = collectData();
+  if (!d.title) { toast('Fill in role title first', 'error'); return; }
+  setBL('btn-gem', true, 'Generating…');
+  G('gem-seq-body').innerHTML = '<div style="display:flex;flex-direction:column;gap:8px">' + [1,2,3,4].map(() => '<div style="background:linear-gradient(90deg,#EBEBEE 25%,#F3F3F5 50%,#EBEBEE 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:4px;height:52px"></div>').join('') + '</div>';
+  try {
+    const raw = await claude({ max_tokens: 1600, messages: [{ role: 'user', content:
+      `Recruiter at CoreWeave building a Gem outreach sequence. Return ONLY JSON array of 4 steps:
+[{"step":1,"day":0,"channel":"LinkedIn InMail","subject":"subject","body":"100-130 words, [First Name], [relevant_background]"},
+ {"step":2,"day":5,"channel":"Email","subject":"subject","body":"60-80 words follow-up, new angle"},
+ {"step":3,"day":10,"channel":"LinkedIn Message","subject":"","body":"40-50 words, social proof"},
+ {"step":4,"day":15,"channel":"Break-up Email","subject":"subject","body":"40-50 words, graceful, door open"}]
+Role: ${d.title} (${d.level}) | Team: ${d.team}
+Overview: ${d.overview} | Must-haves: ${d.mh} | The Sell: ${d.sell} | Target: ${d.tgt}` }] });
+    const seq = parseJ(raw);
+    if (!Array.isArray(seq) || !seq.length) throw new Error('Invalid sequence');
+    _gemseq = seq; renderGemSeq(seq);
+    G('gem-actions').style.display = 'flex';
+    const gu = V('f-gem'); if (gu) { const gl = G('gem-link'); if (gl) { gl.href = gu; gl.style.display = 'inline-flex'; } }
+    toast('Gem sequence generated', 'success');
+  } catch(e) {
+    G('gem-seq-body').innerHTML = `<div style="color:var(--red);font-size:12px;padding:14px">Failed: ${e.message}</div>`;
+    toast('Failed: ' + e.message, 'error');
+  }
+  setBL('btn-gem', false, 'Regenerate Sequence');
+}
+function renderGemSeq(seq) {
+  const colors = ['#1326E1', '#7C3AED', '#059669', '#B45309'];
+  G('gem-seq-body').innerHTML = seq.map((s, i) => `
+    <div class="step-card">
+      <div class="step-hdr">
+        <span class="step-badge" style="background:${(colors[i]||'#999')}20;color:${colors[i]||'#999'}">Step ${s.step||i+1} · ${s.channel||''}</span>
+        <span class="step-day">${!s.day ? 'Day 1' : 'Day ' + s.day}</span>
+      </div>
+      ${s.subject && s.channel !== 'LinkedIn Message' ? `<div class="step-subj">Subject: ${s.subject}</div>` : ''}
+      <div class="step-body">${s.body || ''}</div>
+      <div style="margin-top:6px"><button class="cbtn" onclick="copyStep(${i},this)">Copy step</button></div>
+    </div>`).join('');
+}
+function copyStep(i, btn) {
+  if (!_gemseq?.[i]) return;
+  const s = _gemseq[i];
+  navigator.clipboard.writeText((s.subject && s.channel !== 'LinkedIn Message' ? `Subject: ${s.subject}\n\n` : '') + s.body).then(() => btnFlash(btn, '✓ Copied'));
+}
+function copyText(eid, btn) {
+  const e = G(eid); if (!e) return;
+  navigator.clipboard.writeText(e.textContent || '').then(() => btnFlash(btn, '✓'));
+}
+function copyFullInmail() {
+  if (!_inmail) return;
+  navigator.clipboard.writeText(`Subject: ${_inmail.subject}\n\n${_inmail.body}`).then(() => toast('InMail copied', 'success'));
+}
+function copyFullGem() {
+  if (!_gemseq) return;
+  navigator.clipboard.writeText(_gemseq.map(s => `--- Step ${s.step} · ${s.channel} (Day ${s.day||1}) ---\n${s.subject && s.channel !== 'LinkedIn Message' ? 'Subject: ' + s.subject + '\n\n' : ''}${s.body}`).join('\n\n')).then(() => toast('All steps copied', 'success'));
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   INTERVIEW GUIDE
+═══════════════════════════════════════════════════════════════════ */
+function getIGStages() {
+  const rows = getPlanRows();
+  if (!rows.length) return IG_DEFAULTS;
+  const seen = new Set();
+  return rows.filter(r => { if (seen.has(r.stage)) return false; seen.add(r.stage); return true; })
+    .map(r => ({
+      id:          r.stage.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+      label:       r.stage,
+      interviewer: r.interviewer,
+      duration:    r.duration,
+      focus:       r.focus,
+    }));
+}
+function initIGSidebar() {
+  const sb = G('ig-sidebar'); if (!sb) return;
+  sb.innerHTML = `<div class="ig-sidebar-hdr">Interview Stages</div>` +
+    getIGStages().map(s => `
+      <button class="ig-stage-btn${s.id === _igActive ? ' on' : ''}" id="igbtn-${s.id}" onclick="switchIGStage('${s.id}')">
+        <span>${s.label}</span>
+        <span class="ig-count" id="igcnt-${s.id}">${(_igData[s.id] || []).length}</span>
+      </button>`).join('');
+}
+function renderIGSidebar() { initIGSidebar(); switchIGStage(_igActive); }
+function updateIGCounts() {
+  getIGStages().forEach(s => { const c = G('igcnt-' + s.id); if (c) c.textContent = (_igData[s.id] || []).length; });
+}
+function switchIGStage(id) {
+  _igActive = id;
+  QA('.ig-stage-btn').forEach(b => b.classList.remove('on'));
+  const btn = G('igbtn-' + id); if (btn) btn.classList.add('on');
+  renderIGPanel(id);
+}
+function renderIGPanel(stageId) {
+  const stage = getIGStages().find(s => s.id === stageId); if (!stage) return;
+  const qs    = _igData[stageId] || [];
+  const panel = G('ig-content');
+  panel.innerHTML = `
+    <div class="ig-stage-hdr">
+      <div>
+        <div class="ig-stage-title">${stage.label}</div>
+        <div class="ig-stage-meta">${stage.interviewer ? `Interviewer: <strong>${stage.interviewer}</strong> · ` : ''}${stage.duration || ''}${stage.focus ? `<br>Focus: ${stage.focus}` : ''}</div>
+      </div>
+      <div class="ig-actions">
+        <button class="bgen" id="iggen-${stageId}" onclick="genIGStage('${stageId}')">
+          ${spark()} Generate Questions
+        </button>
+        <button class="cbtn" onclick="addIGQuestion('${stageId}')">+ Add Question</button>
+      </div>
+    </div>
+    <div id="ig-qlist-${stageId}">
+      ${qs.length === 0 ? '<div class="ig-empty">No questions yet — click "Generate Questions" or add your own.</div>' : ''}
+    </div>`;
+  qs.forEach((q, i) => renderQCard(stageId, q, i));
+}
+function renderQCard(stageId, q, idx) {
+  const list = G('ig-qlist-' + stageId); if (!list) return;
+  const r    = q.rubric || { s1: 'Does not demonstrate the competency.', s2: 'Partial demonstration; needs development.', s3: 'Clearly demonstrates with examples.', s4: 'Exceptional depth; could coach others.' };
+  const card = document.createElement('div'); card.className = 'qcard'; card.id = `qc-${stageId}-${idx}`;
+  card.innerHTML = `
+    <div class="qcard-top">
+      <div class="qcard-num">${idx + 1}</div>
+      <div class="qcard-body">
+        <textarea class="qcard-q" rows="2" oninput="updateIGQ('${stageId}',${idx},'q',this.value);autoResize(this)">${q.q || ''}</textarea>
+        <div class="qcard-meta">
+          ${q.comp ? `<span class="qcard-comp">${q.comp}</span>` : ''}
+          ${q.type ? `<span class="qcard-type">${q.type}</span>` : ''}
+        </div>
+        <div class="qcard-actions">
+          <button class="qcard-toggle" onclick="toggleRubric('${stageId}',${idx})">▾ Scoring Rubric</button>
+        </div>
+      </div>
+      <button class="qcard-del" onclick="deleteIGQ('${stageId}',${idx})" title="Remove">×</button>
+    </div>
+    <div class="rubric" id="rubric-${stageId}-${idx}">
+      <div class="rubric-title">📊 Scoring Rubric — click to edit</div>
+      <div class="rubric-grid">
+        ${[1,2,3,4].map(n => `
+          <div class="rubric-cell">
+            <div class="rubric-score s${n}">${['1 — Does Not Meet','2 — Developing','3 — Meets','4 — Exceeds'][n-1]}</div>
+            <textarea class="rubric-ta" rows="4" oninput="updateIGRubric('${stageId}',${idx},'s${n}',this.value);autoResize(this)">${r['s' + n] || ''}</textarea>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  list.appendChild(card);
+}
+function autoResize(ta) { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; }
+function toggleRubric(stageId, idx) { const r = G(`rubric-${stageId}-${idx}`); if (r) r.classList.toggle('on'); }
+function updateIGQ(stageId, idx, field, val) { if (_igData[stageId]?.[idx]) { _igData[stageId][idx][field] = val; updateIGCounts(); fc(); } }
+function updateIGRubric(stageId, idx, key, val) {
+  if (_igData[stageId]?.[idx]) { if (!_igData[stageId][idx].rubric) _igData[stageId][idx].rubric = {}; _igData[stageId][idx].rubric[key] = val; fc(); }
+}
+function deleteIGQ(stageId, idx) { if (_igData[stageId]) { _igData[stageId].splice(idx, 1); renderIGPanel(stageId); updateIGCounts(); fc(); } }
+function addIGQuestion(stageId) {
+  if (!_igData[stageId]) _igData[stageId] = [];
+  _igData[stageId].push({ q: '', comp: '', type: 'Custom', rubric: { s1: 'Does not demonstrate.', s2: 'Partial demonstration.', s3: 'Clear demonstration with examples.', s4: 'Exceptional depth; could coach others.' } });
+  renderIGPanel(stageId); updateIGCounts(); fc();
+}
+async function genIGStage(stageId) {
+  const stage = getIGStages().find(s => s.id === stageId); if (!stage) return;
+  const btn   = G('iggen-' + stageId);
+  if (btn) { btn.disabled = true; btn.innerHTML = spin() + ' Generating…'; }
+  const d = collectData();
+  const stageThemes = getCompThemes().filter(t => t.stage === stage.label || t.persona === stage.interviewer);
+  const compContext  = stageThemes.length ? stageThemes.map(t => `- ${t.name}: ${t.description}`).join('\n') : 'No themes — infer from role requirements.';
+  let interviewerCtx = '';
+  if (stage.interviewer) {
+    try {
+      interviewerCtx = await claude({ max_tokens: 500, messages: [{ role: 'user', content: `Use Glean to look up "${stage.interviewer}" at CoreWeave. Find their title, department, team, and what they focus on. Return a concise 2-3 sentence summary of their role and day-to-day focus.` }], mcp_servers: [GLEAN] });
+      interviewerCtx = interviewerCtx.replace(/```[\s\S]*?```/g, '').trim();
+    } catch(e) { interviewerCtx = `Interviewer: ${stage.interviewer}`; }
+  }
+  const personaDefault = stage.label === 'Recruiter Screen'  ? 'Recruiter: baseline qualification, motivation, logistics, culture fit.'
+    : stage.label === 'HM Interview'        ? 'Hiring manager: role clarity, team fit, growth expectations, management alignment.'
+    : stage.label === 'Technical Interview' ? 'Technical: systems depth, tooling, problem-solving.'
+    : stage.label.includes('Panel')         ? 'Panel: cross-functional fit, communication, domain expertise.'
+    : stage.label === 'Executive Interview' ? 'Executive: strategic thinking, leadership philosophy, long-term fit.'
+    : 'General interview.';
+  const prompt = `You are generating interview questions for the "${stage.label}" stage at CoreWeave.
+INTERVIEWER CONTEXT:
+${stage.interviewer ? `Name: ${stage.interviewer}\n` : ''}${interviewerCtx || personaDefault}
+${stage.focus ? `\nFOCUS NOTES FROM INTAKE:\n${stage.focus}` : ''}
+COMPETENCY THEMES:
+${compContext}
+ROLE: ${d.title} (${d.level}) | Team: ${d.team} | HM: ${d.hm}
+Overview: ${d.overview}
+Must-haves: ${d.mh}
+Tools: ${d.tools}
+Responsibilities: ${d.resp}
+INSTRUCTIONS: Generate 5-6 questions tailored to this interviewer's background. If they work in accounting/finance → lean into ASC 606, controls, ERP. If technical → architecture, tooling. If executive → strategy, leadership. Map each to a competency theme. Rubrics must be specific to this role.
+Return ONLY a valid JSON array:
+[{"q":"Full question?","comp":"Competency theme","type":"Behavioral|Technical|Situational|Values","rubric":{"s1":"weak","s2":"developing","s3":"strong with examples","s4":"exceptional"}}]`;
+  try {
+    const raw = await claude({ max_tokens: 2800, messages: [{ role: 'user', content: prompt }] });
+    const qs  = parseJ(raw);
+    if (!Array.isArray(qs) || !qs.length) throw new Error('No questions returned');
+    _igData[stageId] = qs;
+    renderIGPanel(stageId); updateIGCounts(); fc();
+    toast(`${stage.label}${stage.interviewer ? ' (' + stage.interviewer + ')' : ''} — questions generated`, 'success');
+  } catch(e) { toast('Generation failed: ' + e.message, 'error'); }
+  if (btn) { btn.disabled = false; btn.innerHTML = spark() + ' Regenerate Questions'; }
+}
+async function genAllStages() {
+  setBL('btn-gen-all', true, 'Generating all stages…');
+  for (const stage of getIGStages()) await genIGStage(stage.id);
+  setBL('btn-gen-all', false, 'Generate All Stages');
+  toast('All stages generated!', 'success');
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   INTERVIEW GUIDE — BUILD HTML FOR EXPORT
+═══════════════════════════════════════════════════════════════════ */
+function buildGuideHTML(d, now) {
+  const stages = getIGStages().filter(s => (_igData[s.id] || []).length > 0);
+  if (!stages.length) return '<p style="color:#6B778C;font-style:italic">No questions generated yet.</p>';
+  return stages.map(s => {
+    const qs = _igData[s.id] || [];
+    return `<div style="margin-bottom:32px">
+      <div style="background:#1326E1;color:#fff;padding:10px 18px;border-radius:6px 6px 0 0;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:13px;font-weight:800">${s.label}</span>
+        <span style="font-size:11px;opacity:.75">${s.interviewer ? 'Interviewer: ' + s.interviewer + ' · ' : ''}${s.duration}</span>
+      </div>
+      ${qs.map((q, i) => { const r = q.rubric || {};
+        return `<div style="border:1px solid #DFE1E6;border-top:none;padding:16px 18px;background:${i%2?'#F9FAFC':'#fff'}">
+          <div style="font-size:13px;font-weight:700;color:#343338;margin-bottom:6px">${i+1}. ${q.q||''}</div>
+          ${q.comp?`<span style="font-size:10px;font-weight:700;color:#7C3AED;background:#EDE9FE;padding:2px 8px;border-radius:10px;margin-right:6px">${q.comp}</span>`:''}
+          ${q.type?`<span style="font-size:10px;font-weight:700;color:#504F59;background:#EBEBEE;padding:2px 8px;border-radius:10px">${q.type}</span>`:''}
+          <div style="margin-top:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+            ${[1,2,3,4].map(n => `<div style="background:${['#FEF2F2','#FFF7ED','#D1FAE5','#DAE5FF'][n-1]};border-radius:6px;padding:8px 10px">
+              <div style="font-size:10px;font-weight:800;color:${['#DC2626','#D97706','#059669','#1326E1'][n-1]};margin-bottom:4px">${['1 — Does Not Meet','2 — Developing','3 — Meets','4 — Exceeds'][n-1]}</div>
+              <div style="font-size:11px;color:#343338;line-height:1.5">${r['s'+n]||''}</div>
+            </div>`).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   INTERVIEW GUIDE — EXPORTS
+═══════════════════════════════════════════════════════════════════ */
+function exportGuideHTML() {
+  const d   = collectData();
+  const now = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Interview Guide — ${d.title||'Role'} — CoreWeave</title>
+<style>body{font-family:'Segoe UI',sans-serif;margin:0;padding:40px;background:#F3F3F5}.page{max-width:900px;margin:0 auto;background:#fff;border-radius:4px;box-shadow:0 2px 16px rgba(0,0,0,.08)}@media print{body{background:#fff;padding:0}.page{box-shadow:none}}</style></head>
+<body><div class="page">
+<div style="height:3px;background:#1326E1"></div>
+<div style="background:#000;padding:24px 36px;display:flex;justify-content:space-between;align-items:center">
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><svg width="20" height="20" viewBox="0 0 30 30" fill="none"><path d="M15 2.5C8.096 2.5 2.5 8.096 2.5 15C2.5 21.904 8.096 27.5 15 27.5C18.792 27.5 22.191 25.818 24.5 23.168L21.612 20.821C20.009 22.594 17.634 23.701 15 23.701C10.196 23.701 6.299 19.804 6.299 15C6.299 10.196 10.196 6.299 15 6.299C17.634 6.299 20.009 7.406 21.612 9.179L24.5 6.832C22.191 4.182 18.792 2.5 15 2.5Z" fill="#1326E1"/></svg>
+      <span style="font-size:12px;font-weight:700;color:#fff">CoreWeave</span></div>
+    <div style="font-size:20px;font-weight:800;color:#fff">Interview Guide</div>
+    <div style="font-size:12px;color:#747283;margin-top:4px">${d.title||''}${d.level?' · '+d.level:''} · ${d.team||''}</div>
+  </div>
+  <div style="text-align:right;font-size:11px;color:#747283">${now}${d.hm?'<br>HM: '+d.hm:''}${d.rec?'<br>Recruiter: '+d.rec:''}</div>
+</div>
+<div style="padding:28px 36px">${buildGuideHTML(d, now)}</div>
+<div style="background:#F3F3F5;border-top:1px solid #EBEBEE;padding:12px 36px;font-size:11px;color:#747283;text-align:center">CoreWeave Recruiting · Interview Guide · ${now} · Confidential</div>
+</div></body></html>`;
+  downloadHTML(html, `Interview-Guide-${(d.title||'Role').replace(/\s+/g,'-')}.html`);
+  toast('Downloaded — open the file then Print → Save as PDF', 'info');
+}
+async function exportGuideConfluence() {
+  const d     = collectData(), now = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  const title = `Interview Guide: ${d.title||'New Role'}${d.level?' ('+d.level+')':''}${d.team?' — '+d.team:''}`;
+  const stages = getIGStages().filter(s => (_igData[s.id]||[]).length > 0);
+  const body   = `<p><strong>Role:</strong> ${d.title||''} ${d.level||''} | <strong>Team:</strong> ${d.team||''} | <strong>HM:</strong> ${d.hm||''} | <strong>Recruiter:</strong> ${d.rec||''} | <strong>Generated:</strong> ${now}</p><hr/>` +
+    stages.map(s => { const qs = _igData[s.id]||[];
+      return `<h2>${s.label}${s.interviewer?' — '+s.interviewer:''}</h2>` +
+        qs.map((q,i) => { const r = q.rubric||{};
+          return `<h3>${i+1}. ${(q.q||'').replace(/</g,'&lt;')}</h3>${q.comp?`<p><strong>Competency:</strong> ${q.comp} | <strong>Type:</strong> ${q.type||'—'}</p>`:''}
+            <table><tbody><tr><th style="background:#FEF2F2;padding:6px 10px;width:25%">1 — Does Not Meet</th><th style="background:#FFF7ED;padding:6px 10px;width:25%">2 — Developing</th><th style="background:#D1FAE5;padding:6px 10px;width:25%">3 — Meets</th><th style="background:#DAE5FF;padding:6px 10px;width:25%">4 — Exceeds</th></tr>
+            <tr><td style="padding:6px 10px;vertical-align:top">${r.s1||''}</td><td style="padding:6px 10px;vertical-align:top">${r.s2||''}</td><td style="padding:6px 10px;vertical-align:top">${r.s3||''}</td><td style="padding:6px 10px;vertical-align:top">${r.s4||''}</td></tr></tbody></table>`;
+        }).join('') + '<hr/>';
+    }).join('');
+  try {
+    const cloudRaw = await claude({ max_tokens:400, messages:[{role:'user',content:`Use Atlassian MCP getAccessibleAtlassianResources. Return ONLY JSON: {"cloudId":"..."}`}], mcp_servers:[ATLS] });
+    const cloudId  = parseJ(cloudRaw)?.cloudId; if (!cloudId) throw new Error('No cloud ID');
+    const spaceRaw = await claude({ max_tokens:400, messages:[{role:'user',content:`Use Atlassian MCP getConfluenceSpaces with cloudId "${cloudId}". Return ONLY JSON: {"spaceKey":"..."}`}], mcp_servers:[ATLS] });
+    const spaceKey = parseJ(spaceRaw)?.spaceKey; if (!spaceKey) throw new Error('No space found');
+    const pageRaw  = await claude({ max_tokens:500, messages:[{role:'user',content:`Use Atlassian MCP createConfluencePage: cloudId "${cloudId}", spaceKey "${spaceKey}", title "${title}", body: ${body.slice(0,5000)}. Return JSON: {"url":"..."}`}], mcp_servers:[ATLS] });
+    const urlM     = pageRaw.match(/https:\/\/[^\s"')]+atlassian\.net[^\s"')]+/);
+    const pageUrl  = parseJ(pageRaw)?.url || urlM?.[0];
+    if (pageUrl) { showExtLink(pageUrl, 'Confluence', '#0052CC'); toast('Interview Guide saved to Confluence! Click "Open ↗" to view.', 'success'); }
+    else throw new Error('No page URL returned');
+  } catch(e) { exportGuideHTML(); toast('Confluence unavailable — downloaded as HTML instead', 'info'); }
+}
+async function exportGuideDrive() {
+  const d     = collectData(), now = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  const title = `Interview Guide — ${d.title||'Role'}${d.level?' ('+d.level+')':''} — CoreWeave`;
+  const content = getIGStages().filter(s => (_igData[s.id]||[]).length).map(s => {
+    const qs = _igData[s.id]||[];
+    return `${'─'.repeat(60)}\n${s.label.toUpperCase()}${s.interviewer?' · '+s.interviewer:''}\n${'─'.repeat(60)}\n${qs.map((q,i)=>`${i+1}. ${q.q}\nCompetency: ${q.comp||'—'} | Type: ${q.type||'—'}\n  1: ${q.rubric?.s1||''}\n  2: ${q.rubric?.s2||''}\n  3: ${q.rubric?.s3||''}\n  4: ${q.rubric?.s4||''}`).join('\n\n')}`;
+  }).join('\n\n');
+  try {
+    const raw    = await claude({ max_tokens:400, messages:[{role:'user',content:`Use Google Drive MCP. Create Google Doc titled "${title}" with:\n${content.slice(0,8000)}\nReturn JSON: {"url":"https://docs.google.com/..."}`}], mcp_servers:[GDRIVE] });
+    const urlM   = raw.match(/https:\/\/docs\.google\.com\/[^\s"')\]]+/);
+    const jM     = raw.replace(/```json|```/g,'').match(/\{[\s\S]*?\}/);
+    let   docUrl = null;
+    if (jM) { try { const j = JSON.parse(jM[0]); docUrl = j.url || j.webViewLink; } catch(e){} }
+    if (!docUrl && urlM) docUrl = urlM[0];
+    if (docUrl) { showExtLink(docUrl, 'Google Drive', '#059669'); toast('Interview Guide saved to Drive! Click "Open ↗" to view.', 'success'); }
+    else throw new Error('No URL');
+  } catch(e) { exportGuideHTML(); toast('Drive unavailable — downloaded as HTML instead', 'info'); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   RECRUITER BRIEF — deep Glean research
+═══════════════════════════════════════════════════════════════════ */
+function updateChips() {
+  const d = collectData();
+  const items = [
+    d.title && (d.title + (d.level ? ' (' + d.level + ')' : '')),
+    d.team  && 'Team: ' + d.team,
+    d.hm    && 'HM: '   + d.hm,
+    (d.locs||[]).length && (d.locs.slice(0,2).join(', ') + (d.locs.length > 2 ? ` +${d.locs.length - 2}` : '')),
+  ].filter(Boolean);
+  G('pitch-chips').innerHTML = items.length
+    ? items.map(t => `<span class="chip">${t}</span>`).join('')
+    : '<span class="chip empty">Fill in the intake form first</span>';
+}
+async function genPitch() {
+  const btn = G('btn-pitch'), d = collectData();
+  if (!d.title && !d.team) { toast('Fill in role title and team first', 'error'); switchTab('form'); return; }
+  btn.disabled = true; btn.innerHTML = spin() + ' Researching in Glean…';
+  G('pitch-empty').style.display = 'none';
+  const doc = G('pitch-doc'); doc.style.display = 'block';
+  const skelSections = ['🏢 Company Context','👥 Full Org & Team Structure','👤 Hiring Manager Deep-Dive','🗺️ Role in the Org','📋 Role Story & Impact','⭐ What to Sell','✅ Requirements at a Glance','🎯 Interview Overview','📞 Phone Screen Guide','⚠️ Red Flags','🔍 Sourcing Strategy'];
+  doc.innerHTML = `<div class="pitch-doc-hdr">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px">
+      <div>
+        <div class="pitch-doc-role">${d.title||'Role'}${d.level?' · '+d.level:''}</div>
+        <div class="pitch-doc-meta">${d.team?`<span>🏢 ${d.team}</span>`:''}${d.hm?`<span>👤 ${d.hm}</span>`:''}${(d.locs||[]).length?`<span>📍 ${d.locs.join(', ')}</span>`:''}${d.ttf?`<span>⏱ ${d.ttf}</span>`:''}</div>
+        <div style="margin-top:8px;font-size:11px;color:rgba(255,255,255,.5);display:flex;align-items:center;gap:6px">${spin()} Searching Glean for org chart, HM profile, and related JDs…</div>
+      </div>
+    </div>
+  </div>
+  ${skelSections.map(s=>`<div class="psec"><div class="psec-hdr"><span class="psec-title">${s} <span class="glean-b">✦ Glean</span></span></div><div class="skel"></div></div>`).join('')}`;
+  const sys = `You are a senior recruiting strategist at CoreWeave (AI cloud infrastructure, recently IPO'd). You have access to Glean.
+MANDATORY RESEARCH — execute ALL of these Glean searches before writing:
+1. Search for "${d.hm||'hiring manager'}" in Glean people — full profile, title, manager, direct reports
+2. Search for the manager of "${d.hm||'hiring manager'}" — upward chain to C-suite
+3. Search for "${d.team||d.title||'team'}" Confluence pages, org charts, team charters
+4. Search for "${d.title}" job description in Google Drive — existing JDs for this or similar roles
+5. Search for CoreWeave company news, funding, customers, recent wins
+6. ${d.jdUrl ? `Use Glean read_document to fetch the JD at: ${d.jdUrl}` : `Search for any open "${d.title}" headcount plans`}
+Use REAL names, REAL titles, REAL org data. If a search returns nothing, say so.
+Return ONLY valid JSON (no markdown):
+{"company_context":"3-4 paragraphs, real data","org_structure":"Full org chart with REAL names, titles, manager chain to C-suite, direct reports, sibling teams","hm_profile":"Full name, title, manager, direct reports with names/titles, tenure, focus areas from docs","role_in_org":"Exact positioning, peer roles, why this headcount exists now","role_narrative":"2-3 paragraphs on impact and growth","what_to_sell":["specific point 1","point 2","point 3","point 4","point 5"],"requirements_glance":"quick-ref must-haves vs nice-to-haves","interview_overview":"stage-by-stage with interviewer names from intake","screen_guide":"5-6 phone screen questions with strong-answer guidance","red_flags":["specific red flag 1","flag 2","flag 3","flag 4","flag 5"],"sourcing_strategy":"specific companies, communities, titles, messaging"}`;
+  const prompt = `INTAKE DATA:
+Title: ${d.title} | Level: ${d.level} | Team: ${d.team} | HM: ${d.hm}
+Recruiter: ${d.rec} | Locations: ${(d.locs||[]).join(', ')} | TTF: ${d.ttf} | HC: ${d.hc}
+JD URL: ${d.jdUrl || 'not provided'}
+Overview: ${d.overview}
+Must-haves: ${d.mh}
+Nice-to-haves: ${d.nth}
+Tools: ${d.tools}
+The Sell: ${d.sell}
+Responsibilities: ${d.resp}
+Success metrics: ${d.suc}
+EVP: ${d.evp}
+Cross-functional partners: ${d.cross}
+Target companies: ${d.tgt}
+Stay away from: ${d.away}
+INTERVIEW PLAN:
+${d.planRows.map(r=>`${r.stage}${r.interviewer?' — '+r.interviewer:''}${r.focus?' (Focus: '+r.focus+')':''}`).join('\n')||'Not defined yet'}
+Execute all 6 Glean research steps, then generate the complete brief JSON.`;
+  try {
+    const raw   = await claude({ system: sys, max_tokens: 6000, messages: [{ role: 'user', content: prompt }], mcp_servers: [GLEAN] });
+    const brief = parseJ(raw);
+    if (!brief || typeof brief !== 'object') throw new Error('Invalid brief returned');
+    if (!Array.isArray(brief.what_to_sell)) brief.what_to_sell = [];
+    if (!Array.isArray(brief.red_flags))    brief.red_flags    = [];
+    _brief = { d, brief }; renderPitchDoc(d, brief, doc);
+    toast('Brief generated with live Glean data', 'success');
+  } catch(e) {
+    doc.innerHTML = `<div style="padding:18px;color:var(--red);background:var(--rp);border-radius:8px;font-size:13px"><strong>Generation failed:</strong> ${e.message}</div>`;
+    toast('Generation failed: ' + e.message, 'error');
+  }
+  btn.disabled = false; btn.innerHTML = spark() + ' Regenerate Brief';
+}
+function renderPitchDoc(d, brief, doc) {
+  const SECS = [
+    { k: 'company_context',    label: 'Company Context',          icon: '🏢', glean: true },
+    { k: 'org_structure',      label: 'Full Org & Team Structure', icon: '👥', glean: true },
+    { k: 'hm_profile',         label: 'Hiring Manager Deep-Dive', icon: '👤', glean: true },
+    { k: 'role_in_org',        label: 'Role in the Org',          icon: '🗺️', glean: true },
+    { k: 'role_narrative',     label: 'Role Story & Impact',      icon: '📋' },
+    { k: 'what_to_sell',       label: 'What to Sell',             icon: '⭐', list: true },
+    { k: 'requirements_glance',label: 'Requirements at a Glance', icon: '✅' },
+    { k: 'interview_overview', label: 'Interview Overview',       icon: '🎯' },
+    { k: 'screen_guide',       label: 'Phone Screen Guide',       icon: '📞' },
+    { k: 'red_flags',          label: 'Red Flags',                icon: '⚠️', list: true },
+    { k: 'sourcing_strategy',  label: 'Sourcing Strategy',        icon: '🔍' },
+  ];
+  doc.innerHTML = `<div class="pitch-doc-hdr">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px">
+      <div>
+        <div class="pitch-doc-role">${d.title||'Role'}${d.level?' · '+d.level:''}</div>
+        <div class="pitch-doc-meta">${d.team?`<span>🏢 ${d.team}</span>`:''}${d.hm?`<span>👤 ${d.hm}</span>`:''}${(d.locs||[]).length?`<span>📍 ${d.locs.join(', ')}</span>`:''}${d.ttf?`<span>⏱ ${d.ttf}</span>`:''}</div>
+      </div>
+      <button onclick="copyBrief()" style="font-family:var(--font);font-size:11px;font-weight:700;padding:6px 12px;border-radius:6px;cursor:pointer;border:1.5px solid rgba(255,255,255,.4);background:rgba(255,255,255,.1);color:#fff;white-space:nowrap;flex-shrink:0">📋 Copy Full Brief</button>
+    </div>
+  </div>
+  ${SECS.map(s => {
+    const val = brief[s.k]; if (val === undefined || val === null) return '';
+    const content = Array.isArray(val) ? `<ul>${val.map(i => `<li>${i}</li>`).join('')}</ul>` : String(val);
+    return `<div class="psec">
+      <div class="psec-hdr"><span class="psec-title">${s.icon} ${s.label}${s.glean ? ' <span class="glean-b">✦ Glean</span>' : ''}</span><button class="pcopy" onclick="pcopySec('${s.k}',this)">Copy</button></div>
+      <div class="psec-body">${content}</div>
+    </div>`;
+  }).join('')}`;
+}
+function pcopySec(k, btn) {
+  if (!_brief) return;
+  const val = _brief.brief[k];
+  navigator.clipboard.writeText(Array.isArray(val) ? val.map((i,n) => `${n+1}. ${i}`).join('\n') : String(val || '')).then(() => btnFlash(btn, '✓'));
+}
+function copyBrief() {
+  if (!_brief) return;
+  const { d, brief } = _brief;
+  const lines = [
+    `RECRUITER BRIEF: ${d.title} (${d.level})`, `Team: ${d.team} | HM: ${d.hm} | Recruiter: ${d.rec}`, '',
+    '== COMPANY CONTEXT ==',         brief.company_context    || '', '',
+    '== ORG & TEAM STRUCTURE ==',    brief.org_structure      || '', '',
+    '== HIRING MANAGER ==',          brief.hm_profile         || '', '',
+    '== ROLE IN THE ORG ==',         brief.role_in_org        || '', '',
+    '== ROLE STORY ==',              brief.role_narrative     || '', '',
+    '== WHAT TO SELL ==',            (brief.what_to_sell||[]).map((i,n) => `${n+1}. ${i}`).join('\n'), '',
+    '== REQUIREMENTS ==',            brief.requirements_glance|| '', '',
+    '== INTERVIEW OVERVIEW ==',      brief.interview_overview || '', '',
+    '== PHONE SCREEN GUIDE ==',      brief.screen_guide       || '', '',
+    '== RED FLAGS ==',               (brief.red_flags||[]).map(i => `• ${i}`).join('\n'), '',
+    '== SOURCING STRATEGY ==',       brief.sourcing_strategy  || '',
+  ];
+  navigator.clipboard.writeText(lines.join('\n')).then(() => toast('Brief copied', 'success'));
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PRINT / PDF — downloads a PDF-ready HTML file
+═══════════════════════════════════════════════════════════════════ */
+function printForm() {
+  const d   = collectData();
+  const now = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Role Intake — ${d.title||'New Role'} — CoreWeave</title>
+<style>body{font-family:'Segoe UI',sans-serif;margin:0;padding:40px;background:#F3F3F5;color:#343338}.page{max-width:820px;margin:0 auto;background:#fff;border-radius:4px;padding:36px;box-shadow:0 2px 16px rgba(0,0,0,.08)}h2{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#fff;background:#343338;padding:5px 12px;border-radius:3px;margin:20px 0 8px}table{width:100%;border-collapse:collapse;margin-bottom:10px}th{background:#F4F5F7;text-align:left;padding:6px 10px;font-size:11px;font-weight:700;color:#504F59;border:1px solid #DFE1E6}td{padding:7px 10px;font-size:13px;border:1px solid #EBEBEE;vertical-align:top;white-space:pre-wrap}p{font-size:13px;line-height:1.7;margin:4px 0}@media print{body{background:#fff;padding:0}.page{box-shadow:none}}</style></head>
+<body><div class="page">
+  <div style="height:3px;background:#1326E1;margin-bottom:18px;border-radius:2px"></div>
+  <div style="font-size:20px;font-weight:800;color:#343338;margin-bottom:2px">${d.title||'Role Intake'}${d.level?' · '+d.level:''}</div>
+  <div style="font-size:12px;color:#747283;margin-bottom:16px">${d.team||''}${d.hm?' · HM: '+d.hm:''} · ${now}</div>
+  <h2>Role Details</h2>
+  <table><tbody>${[['Title',d.title+(d.level?' · '+d.level:'')],['Team',d.team],['HM',d.hm],['Recruiter',d.rec],['HC',d.hc],['Employment',d.emptype],['Locations',(d.locs||[]).join(', ')],['JD',d.jdUrl]].filter(([,v])=>v).map(([l,v])=>`<tr><th style="width:160px">${l}</th><td>${v}</td></tr>`).join('')}</tbody></table>
+  ${d.overview?`<h2>Overview</h2><p>${d.overview.replace(/\n/g,'<br>')}</p>`:''}
+  ${d.mh?`<h2>Must-Haves</h2><p>${d.mh.replace(/\n/g,'<br>')}</p>`:''}
+  ${d.nth?`<h2>Nice-to-Haves</h2><p>${d.nth.replace(/\n/g,'<br>')}</p>`:''}
+  ${d.tools?`<h2>Tools</h2><p>${d.tools.replace(/\n/g,'<br>')}</p>`:''}
+  ${d.resp?`<h2>Responsibilities</h2><p>${d.resp.replace(/\n/g,'<br>')}</p>`:''}
+  ${(d.ynqs||[]).length?`<h2>Screening Questions</h2><table><tbody><tr><th>Question</th><th style="width:110px">Qualifying</th><th style="width:90px">Knockout</th></tr>${d.ynqs.map(q=>`<tr><td>${q.q}</td><td>${q.ans}</td><td>${q.ko?'Yes':''}</td></tr>`).join('')}</tbody></table>`:''}
+  ${getPlanRows().length?`<h2>Interview Plan</h2><table><tbody><tr><th>Stage</th><th>Interviewer(s)</th><th>Duration</th><th>Focus</th></tr>${getPlanRows().map(r=>`<tr><td>${r.stage}</td><td>${r.interviewer||''}</td><td>${r.duration}</td><td>${r.focus||''}</td></tr>`).join('')}</tbody></table>`:''}
+  <p style="margin-top:24px;font-size:11px;color:#9CA3AF;text-align:center;border-top:1px solid #EBEBEE;padding-top:10px">CoreWeave Recruiting · ${now} · Confidential</p>
+</div></body></html>`;
+  downloadHTML(html, `Role-Intake-${(d.title||'Form').replace(/\s+/g,'-')}.html`);
+  toast('Downloaded — open the file then Print → Save as PDF', 'info');
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SAVE TO CONFLUENCE
+═══════════════════════════════════════════════════════════════════ */
+async function saveToConfluence() {
+  const d   = collectData(), now = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  const title = `Role Intake: ${d.title||'New Role'}${d.level?' ('+d.level+')':''}${d.team?' — '+d.team:''}`;
+  const body  = [
+    `<p><strong>Generated:</strong> ${now} &nbsp;|&nbsp; <strong>HM:</strong> ${d.hm||'—'} &nbsp;|&nbsp; <strong>Recruiter:</strong> ${d.rec||'—'}</p>`,
+    `<h2>Role Details</h2><table><tbody>`,
+    ...[['Job Title',d.title],['Level',d.level],['Team',d.team],['HM',d.hm],['Recruiter',d.rec],['HC',d.hc],['Employment',d.emptype],['Locations',(d.locs||[]).join(', ')],['JD',d.jdUrl],['Greenhouse',d.gh]].filter(([,v])=>v).map(([l,v])=>`<tr><th style="text-align:left;padding:6px 10px;background:#F4F5F7;width:200px">${l}</th><td style="padding:6px 10px">${v}</td></tr>`),
+    `</tbody></table>`,
+    d.overview?`<h2>Overview</h2><p>${d.overview.replace(/\n/g,'<br/>')}</p>`:'',
+    d.mh?`<h2>Must-Haves</h2><p>${d.mh.replace(/\n/g,'<br/>')}</p>`:'',
+    d.nth?`<h2>Nice-to-Haves</h2><p>${d.nth.replace(/\n/g,'<br/>')}</p>`:'',
+    d.tools?`<h2>Tools / Systems</h2><p>${d.tools.replace(/\n/g,'<br/>')}</p>`:'',
+    d.resp?`<h2>Responsibilities</h2><p>${d.resp.replace(/\n/g,'<br/>')}</p>`:'',
+    d.suc?`<h2>Success Metrics</h2><p>${d.suc.replace(/\n/g,'<br/>')}</p>`:'',
+    (d.ynqs||[]).length?`<h2>Screening Questions</h2><table><tbody><tr><th style="background:#F4F5F7;padding:6px 10px">Question</th><th style="background:#F4F5F7;padding:6px 10px">Qualifying</th><th style="background:#F4F5F7;padding:6px 10px">Knockout</th></tr>${d.ynqs.map(q=>`<tr><td style="padding:6px 10px">${q.q}</td><td style="padding:6px 10px;font-weight:bold">${q.ans}</td><td style="padding:6px 10px">${q.ko?'🚫 Yes':'No'}</td></tr>`).join('')}</tbody></table>`:'',
+    d.screenq?`<h2>Phone Screen Questions</h2><p>${d.screenq.replace(/\n/g,'<br/>')}</p>`:'',
+    `<hr/><p style="color:#6B778C;font-size:12px">CoreWeave Recruiting · ${now} · Confidential</p>`,
+  ].filter(Boolean).join('\n');
+  try {
+    const cloudRaw = await claude({ max_tokens:400, messages:[{role:'user',content:`Use Atlassian MCP getAccessibleAtlassianResources. Return ONLY JSON: {"cloudId":"..."}`}], mcp_servers:[ATLS] });
+    const cloudId  = parseJ(cloudRaw)?.cloudId; if (!cloudId) throw new Error('Could not get cloud ID');
+    const spaceRaw = await claude({ max_tokens:400, messages:[{role:'user',content:`Use Atlassian MCP getConfluenceSpaces with cloudId "${cloudId}". Find a recruiting/HR/talent space. Return ONLY JSON: {"spaceKey":"..."}`}], mcp_servers:[ATLS] });
+    const spaceKey = parseJ(spaceRaw)?.spaceKey; if (!spaceKey) throw new Error('Could not find a Confluence space');
+    const pageRaw  = await claude({ max_tokens:600, messages:[{role:'user',content:`Use Atlassian MCP createConfluencePage: cloudId "${cloudId}", spaceKey "${spaceKey}", title "${title}", body: ${body.slice(0,4000)}. Return JSON: {"url":"..."}`}], mcp_servers:[ATLS] });
+    const urlM     = pageRaw.match(/https:\/\/[^\s"')]+atlassian\.net[^\s"')]+/);
+    const pageUrl  = parseJ(pageRaw)?.url || urlM?.[0];
+    if (pageUrl) { showExtLink(pageUrl, 'Confluence', '#0052CC'); toast('Saved to Confluence! Click "Open ↗" to view.', 'success'); }
+    else throw new Error('Page may have been created — check Confluence directly');
+  } catch(e) { toast('Confluence: ' + e.message, 'error'); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SAVE TO GOOGLE DRIVE  (full doc: intake + guide + brief)
+═══════════════════════════════════════════════════════════════════ */
+async function saveToGDrive() {
+  const btn = G('btn-gdoc'), d = collectData();
+  if (!d.title && !d.team) { toast('Fill in a role title first', 'error'); return; }
+  const orig = btn.innerHTML; btn.disabled = true; btn.innerHTML = spin() + ' Building doc…';
+  const now      = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  const docTitle = `Role Intake — ${d.title||'New Role'}${d.level?' ('+d.level+')':''} — CoreWeave`;
+  const DIV  = '═'.repeat(60), div2 = '─'.repeat(60);
+  const L    = (label, val) => val ? `${label}: ${val}\n` : '';
+  const LS   = (label, val) => val ? `\n${label}:\n${val}\n` : '';
+  const intake = [
+    `${DIV}\nCOREWEAVE ROLE INTAKE\n${DIV}\nGenerated: ${now}`,
+    `\n${div2}\nROLE OVERVIEW\n${div2}`,
+    L('Title', d.title+(d.level?' · '+d.level:'')), L('Team',d.team), L('HM',d.hm), L('Recruiter',d.rec),
+    L('Headcount',d.hc), L('Employment',d.emptype), L('Locations',(d.locs||[]).join(', ')),
+    L('JD',d.jdUrl), L('Greenhouse',d.gh), L('Gem Project',d.gem),
+    LS('Overview',d.overview), LS('Problem being solved',d.problem), LS('The Sell',d.sell),
+    `\n${div2}\nREQUIREMENTS\n${div2}`, LS('Must-Haves',d.mh), LS('Nice-to-Haves',d.nth), LS('Tools',d.tools),
+    `\n${div2}\nRESPONSIBILITIES\n${div2}`, LS('Key Responsibilities',d.resp), LS('First 6 Months',d.sixmo), LS('Cross-functional Partners',d.cross),
+    `\n${div2}\nSOURCING\n${div2}`, L('Channels',(d.srcs||[]).join(', ')), L('D&I Goal',d.dei), LS('Target Companies',d.tgt), LS('Stay Away From',d.away),
+    `\n${div2}\nSLAs & SUCCESS\n${div2}`, L('TTF',d.ttf), L('Submittals/week',d.sub), L('Urgency',d.urg), LS('Success Metrics',d.suc),
+    `\n${div2}\nONBOARDING\n${div2}`, LS('30/60/90 Expectations',d.ramp), L('Onboarding Owner',d.obown), L('Travel',d.trav),
+    `\n${div2}\nSCREENING QUESTIONS\n${div2}`,
+    ...(d.ynqs||[]).map((q,i) => `${i+1}. ${q.q}\n   Qualifying: ${q.ans}${q.ko?' | KNOCKOUT':''}\n`),
+    LS('Phone Screen Questions',d.screenq), LS('Alt Titles to Source',d.alt),
+    `\n${div2}\nINTERVIEW PLAN\n${div2}`,
+    ...d.planRows.map(r => `Stage: ${r.stage}${r.interviewer?' | Interviewer: '+r.interviewer:''}${r.duration?' | '+r.duration:''}\n`+(r.focus?`  Focus: ${r.focus}\n`:'')),
+    `\n${div2}\nCOMPETENCY THEMES\n${div2}`,
+    ...getCompThemes().filter(t=>t.name).map((t,i) => `${i+1}. ${t.name}\n   ${t.description}\n   Stage: ${t.stage} | Persona: ${t.persona}\n`),
+  ].filter(Boolean).join('');
+  const igStages = getIGStages().filter(s => (_igData[s.id]||[]).length > 0);
+  const guide    = igStages.length ? '\n\n'+DIV+'\nINTERVIEW GUIDE\n'+DIV+igStages.map(s=>{
+    const qs = _igData[s.id]||[];
+    return `\n${div2}\n${s.label.toUpperCase()}${s.interviewer?' · '+s.interviewer:''}\n${div2}\n`+qs.map((q,i)=>{const r=q.rubric||{};return`\n${i+1}. ${q.q}\n   Competency: ${q.comp||'—'} | Type: ${q.type||'—'}\n   1: ${r.s1||''}\n   2: ${r.s2||''}\n   3: ${r.s3||''}\n   4: ${r.s4||''}\n`;}).join('');}).join('') : '';
+  const brief    = _brief?.brief?.company_context ? '\n\n'+DIV+'\nRECRUITER BRIEF\n'+DIV+
+    [['COMPANY CONTEXT',_brief.brief.company_context],['ORG & TEAM',_brief.brief.org_structure],['HIRING MANAGER',_brief.brief.hm_profile],['ROLE IN THE ORG',_brief.brief.role_in_org],['ROLE STORY',_brief.brief.role_narrative],['REQUIREMENTS',_brief.brief.requirements_glance],['PHONE SCREEN',_brief.brief.screen_guide],['SOURCING',_brief.brief.sourcing_strategy]].filter(([,v])=>v).map(([l,v])=>`\n${div2}\n${l}\n${div2}\n${v}\n`).join('')+
+    ((_brief.brief.what_to_sell||[]).length ? `\n${div2}\nWHAT TO SELL\n${div2}\n`+_brief.brief.what_to_sell.map((s,i)=>`${i+1}. ${s}`).join('\n')+'\n' : '')+
+    ((_brief.brief.red_flags||[]).length ? `\n${div2}\nRED FLAGS\n${div2}\n`+_brief.brief.red_flags.map(f=>`• ${f}`).join('\n')+'\n' : '') : '';
+  const fullContent = intake + guide + brief + `\n\n${DIV}\nCoreWeave Recruiting · ${now} · Confidential\n${DIV}`;
+  try {
+    const raw = await claude({ max_tokens: 500, messages: [{ role: 'user', content:
+      `Use Google Drive MCP to create a new Google Doc.\nTitle: "${docTitle}"\nContent:\n${fullContent.slice(0,9000)}\nReturn ONLY JSON: {"url":"https://docs.google.com/...","webViewLink":"..."}` }], mcp_servers: [GDRIVE] });
+    const urlM   = raw.match(/https:\/\/docs\.google\.com\/[^\s"')\]]+/);
+    const jM     = raw.replace(/```json|```/g,'').match(/\{[\s\S]*?\}/);
+    let   docUrl = null;
+    if (jM) { try { const j = JSON.parse(jM[0]); docUrl = j.url || j.webViewLink || j.alternateLink; } catch(e){} }
+    if (!docUrl && urlM) docUrl = urlM[0];
+    if (docUrl && d.jdUrl && docUrl.trim() === d.jdUrl.trim()) docUrl = null;
+    if (docUrl) { showExtLink(docUrl, 'Google Drive', '#059669'); toast('Google Doc created! Click "Open ↗" to view.', 'success'); }
+    else throw new Error('No Doc URL returned');
+  } catch(e) {
+    // Fallback: download a styled HTML file
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${docTitle}</title>
+<style>body{font-family:'Segoe UI',sans-serif;margin:0;padding:40px;background:#F3F3F5;color:#343338}.page{max-width:820px;margin:0 auto;background:#fff;border-radius:4px;padding:36px;box-shadow:0 2px 16px rgba(0,0,0,.08)}.note{background:#DAE5FF;border:1px solid rgba(19,38,225,.2);border-radius:6px;padding:10px 14px;font-size:12px;color:#1326E1;margin-bottom:24px}h2{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#fff;background:#343338;padding:5px 12px;border-radius:3px;margin:20px 0 8px}h3{font-size:12px;font-weight:700;color:#1326E1;margin:14px 0 4px}p,li{font-size:13px;line-height:1.7}table{width:100%;border-collapse:collapse;margin-bottom:10px}th{background:#F4F5F7;text-align:left;padding:6px 10px;font-size:11px;font-weight:700;color:#504F59;border:1px solid #DFE1E6}td{padding:7px 10px;font-size:13px;border:1px solid #EBEBEE;vertical-align:top;white-space:pre-wrap}.rubric{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}.rc{padding:8px 10px;border-radius:5px;font-size:11px;line-height:1.5}.rc strong{display:block;font-size:10px;margin-bottom:4px}.r1{background:#FEF2F2}.r2{background:#FFF7ED}.r3{background:#D1FAE5}.r4{background:#DAE5FF}
+@media print{body{background:#fff;padding:0}.note{display:none!important}.page{box-shadow:none}}</style></head>
+<body><div class="page">
+  <div style="height:3px;background:#1326E1;margin-bottom:22px;border-radius:2px"></div>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><svg width="22" height="22" viewBox="0 0 30 30" fill="none"><path d="M15 2.5C8.096 2.5 2.5 8.096 2.5 15C2.5 21.904 8.096 27.5 15 27.5C18.792 27.5 22.191 25.818 24.5 23.168L21.612 20.821C20.009 22.594 17.634 23.701 15 23.701C10.196 23.701 6.299 19.804 6.299 15C6.299 10.196 10.196 6.299 15 6.299C17.634 6.299 20.009 7.406 21.612 9.179L24.5 6.832C22.191 4.182 18.792 2.5 15 2.5Z" fill="#1326E1"/></svg><span style="font-size:10px;font-weight:700;color:#1326E1;letter-spacing:.8px;text-transform:uppercase">CoreWeave Recruiting</span></div>
+  <div style="font-size:22px;font-weight:800;color:#343338;margin-bottom:2px">${d.title||'Role Intake'}${d.level?' <span style="color:#6989FF">· '+d.level+'</span>':''}</div>
+  <div style="font-size:12px;color:#747283;margin-bottom:18px">${d.team||''}${d.hm?' · HM: '+d.hm:''} · ${now}</div>
+  <div class="note">💡 <strong>Drive unavailable.</strong> Print → Save as PDF, or drag this file into drive.google.com</div>
+  <h2>Role Details</h2><table><tbody>${[['Title',d.title+(d.level?' · '+d.level:'')],['Team',d.team],['HM',d.hm],['Recruiter',d.rec],['HC',d.hc],['Employment',d.emptype],['Locations',(d.locs||[]).join(', ')],['JD',d.jdUrl],['Greenhouse',d.gh]].filter(([,v])=>v).map(([l,v])=>`<tr><th style="width:160px">${l}</th><td>${v}</td></tr>`).join('')}</tbody></table>
+  ${d.overview?`<h2>Overview</h2><p>${d.overview.replace(/\n/g,'<br>')}</p>`:''}
+  ${d.mh?`<h2>Must-Haves</h2><p>${d.mh.replace(/\n/g,'<br>')}</p>`:''}
+  ${d.nth?`<h2>Nice-to-Haves</h2><p>${d.nth.replace(/\n/g,'<br>')}</p>`:''}
+  ${d.tools?`<h2>Tools</h2><p>${d.tools.replace(/\n/g,'<br>')}</p>`:''}
+  ${d.resp?`<h2>Responsibilities</h2><p>${d.resp.replace(/\n/g,'<br>')}</p>`:''}
+  ${(d.ynqs||[]).length?`<h2>Screening Questions</h2><table><tbody><tr><th>Question</th><th style="width:120px">Qualifying</th><th style="width:90px">Knockout</th></tr>${d.ynqs.map(q=>`<tr><td>${q.q}</td><td style="font-weight:700">${q.ans}</td><td>${q.ko?'🚫 Yes':'No'}</td></tr>`).join('')}</tbody></table>`:''}
+  ${d.screenq?`<h2>Phone Screen Questions</h2><p>${d.screenq.replace(/\n/g,'<br>')}</p>`:''}
+  ${getPlanRows().length?`<h2>Interview Plan</h2><table><tbody><tr><th>Stage</th><th>Interviewer(s)</th><th>Duration</th><th>Focus Notes</th></tr>${getPlanRows().map(r=>`<tr><td>${r.stage}</td><td>${r.interviewer||'—'}</td><td>${r.duration}</td><td>${r.focus||'—'}</td></tr>`).join('')}</tbody></table>`:''}
+  ${getCompThemes().filter(t=>t.name).length?`<h2>Competency Themes</h2><table><tbody><tr><th>Theme</th><th>Description</th><th>Stage</th><th>Persona</th></tr>${getCompThemes().filter(t=>t.name).map(t=>`<tr><td style="font-weight:700">${t.name}</td><td>${t.description}</td><td>${t.stage}</td><td>${t.persona}</td></tr>`).join('')}</tbody></table>`:''}
+  ${igStages.length?`<h2 style="background:#1326E1">Interview Guide</h2>${igStages.map(s=>{const qs=_igData[s.id]||[];return`<h3>${s.label}${s.interviewer?' · '+s.interviewer:''}</h3>${qs.map((q,i)=>{const r=q.rubric||{};return`<p><strong>${i+1}. ${q.q}</strong></p>${q.comp?`<p style="font-size:11px;color:#7C3AED">Competency: ${q.comp} | Type: ${q.type||'—'}</p>`:''}<div class="rubric"><div class="rc r1"><strong>1 — Does Not Meet</strong>${r.s1||''}</div><div class="rc r2"><strong>2 — Developing</strong>${r.s2||''}</div><div class="rc r3"><strong>3 — Meets</strong>${r.s3||''}</div><div class="rc r4"><strong>4 — Exceeds</strong>${r.s4||''}</div></div>`;}).join('')}`}).join('')}`:''}
+  ${_brief?.brief?.company_context?`<h2 style="background:#0a1585">Recruiter Brief</h2>${[['Company Context',_brief.brief.company_context],['Org & Team',_brief.brief.org_structure],['Hiring Manager',_brief.brief.hm_profile],['Role in the Org',_brief.brief.role_in_org],['Role Story',_brief.brief.role_narrative],['Requirements',_brief.brief.requirements_glance],['Phone Screen Guide',_brief.brief.screen_guide],['Sourcing Strategy',_brief.brief.sourcing_strategy]].filter(([,v])=>v).map(([l,v])=>`<h3>${l}</h3><p>${v.replace(/\n/g,'<br>')}</p>`).join('')}${(_brief.brief.what_to_sell||[]).length?`<h3>What to Sell</h3><ul>${_brief.brief.what_to_sell.map(s=>`<li>${s}</li>`).join('')}</ul>`:''}${(_brief.brief.red_flags||[]).length?`<h3>Red Flags</h3><ul>${_brief.brief.red_flags.map(f=>`<li>${f}</li>`).join('')}</ul>`:''}`:''}
+  <p style="margin-top:28px;font-size:11px;color:#9CA3AF;text-align:center;border-top:1px solid #EBEBEE;padding-top:12px">CoreWeave Recruiting · ${docTitle} · ${now} · Confidential</p>
+</div></body></html>`;
+    downloadHTML(html, `${(d.title||'Role').replace(/\s+/g,'-')}-Intake-Full.html`);
+    toast('Downloaded — open the file then Print → Save as PDF', 'info');
+  }
+  btn.innerHTML = orig; btn.disabled = false;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════════════════════ */
+function toast(msg, type = 'info') {
+  const e = document.createElement('div'); e.className = 'toast ' + type; e.textContent = msg;
+  document.body.appendChild(e);
+  requestAnimationFrame(() => requestAnimationFrame(() => e.classList.add('show')));
+  setTimeout(() => { e.classList.remove('show'); setTimeout(() => e.remove(), 300); }, 3200);
+}
+</script>
+</body>
+</html>
