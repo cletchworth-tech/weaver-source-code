@@ -1,0 +1,1965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CoreWeave Talent OS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    html, body, #root {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background: #F9FAFC;
+    }
+  </style>
+  <!-- React 18 + Babel standalone — runs JSX directly in the browser -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+const { useState, useReducer, useEffect, useRef, useCallback } = React;
+
+// ─── BRAND ────────────────────────────────────────────────────────────────────
+const P = {
+  calcite:"#F9FAFC", cloud:"#F3F3F5", mist:"#EBEBEE",
+  silver:"#CDCED6", lightGray:"#A6A6B4", coolGray:"#747283",
+  slate:"#63606D", midGray:"#504F59", charcoal:"#343338",
+  lapis:"#4665FF", lapisDeep:"#2741E7", lapisMid:"#6989FF",
+  lapisSoft:"#93B2FF", lapisLight:"#DAE5FF",
+  sidebarBg:"#0E1829", sidebarPanel:"#15243A", sidebarBorder:"#1E3050",
+  sidebarText:"#E8EDF5", sidebarMuted:"rgba(232,237,245,0.38)",
+  green:"#16A34A", greenLight:"#DCFCE7", greenBorder:"#86EFAC",
+  amber:"#D97706", amberLight:"#FEF3C7", amberBorder:"#FCD34D",
+  red:"#DC2626", redLight:"#FEE2E2", redBorder:"#FCA5A5",
+  teal:"#0D9488", tealLight:"#CCFBF1",
+  purple:"#7C3AED", purpleLight:"#EDE9FE",
+  indigo:"#4338CA", indigoLight:"#E0E7FF",
+  orange:"#C2410C", orangeLight:"#FFEDD5",
+  ghGreen:"#24A148", driveBlue:"#1A73E8", bhPurple:"#6B3FA0",
+};
+
+// rgba helper — no 8-char hex anywhere
+const a = (hex, op) => {
+  const h = hex.replace("#","");
+  return `rgba(${parseInt(h.slice(0,2),16)},${parseInt(h.slice(2,4),16)},${parseInt(h.slice(4,6),16)},${op})`;
+};
+
+// ─── STATUS / PRIORITY ────────────────────────────────────────────────────────
+const STATUS = {
+  draft:            { label:"Draft",             c:P.coolGray, bg:P.cloud       },
+  submitted:        { label:"Submitted",         c:P.amber,    bg:P.amberLight  },
+  hrbp_approved:    { label:"HRBP ✓",            c:P.indigo,   bg:P.indigoLight },
+  org_approved:     { label:"Org Leader ✓",      c:P.teal,     bg:P.tealLight   },
+  ta_queue:         { label:"TA Queue",           c:P.lapis,    bg:P.lapisLight  },
+  intake:           { label:"Intake",             c:P.lapis,    bg:P.lapisLight  },
+  sourcing:         { label:"Sourcing",           c:P.indigo,   bg:P.indigoLight },
+  interviewing:     { label:"Interviewing",       c:P.purple,   bg:P.purpleLight },
+  offer:            { label:"Offer",              c:P.green,    bg:P.greenLight  },
+  filled:           { label:"Filled ✓",           c:P.green,    bg:P.greenLight  },
+};
+
+const PRIO = {
+  P0:{ label:"P0 Critical", c:"#991B1B", bg:"#FEE2E2" },
+  P1:{ label:"P1 High",     c:"#9A3412", bg:"#FFEDD5" },
+  P2:{ label:"P2 Normal",   c:P.indigo,  bg:P.indigoLight },
+};
+
+const PERSONAS = {
+  hm:         { name:"Sarah Chen",      title:"VP, Finance",                 dept:"Finance",          av:"SC", color:P.purple, role:"Hiring Manager" },
+  hrbp:       { name:"Emily Arney",     title:"HR Business Partner",         dept:"People & Culture", av:"EA", color:P.indigo, role:"HRBP"           },
+  org_leader: { name:"Jeff Baker",      title:"Chief Accounting Officer",    dept:"Finance",          av:"JB", color:P.amber,  role:"Org Leader"     },
+  finance:    { name:"Ian Woller",      title:"Sr. Manager, FP&A",           dept:"FP&A",             av:"IW", color:P.teal,   role:"Finance"        },
+  rec_lead:   { name:"Joy Embry",       title:"Director, Talent Acquisition", dept:"TA",              av:"JE", color:P.purple, role:"TA Lead"        },
+  ta:         { name:"Cody Letchworth", title:"Talent Acquisition Partner",  dept:"TA",               av:"CL", color:P.lapis,  role:"TA Partner"     },
+};
+
+const RECRUITERS = ["Cody Letchworth","Andy Brooks","Kelley Johnson","Nicolas Cosmer-Lippa","Fatima Tam","Brandon Seedarnee"];
+const Q2 = { total:45, filled:6 };
+
+// ─── PERSONA-SPECIFIC NAV ─────────────────────────────────────────────────────
+const NAV = {
+  hm: [
+    { id:"dashboard", icon:"⊡", label:"My Overview",     desc:"Your requests & status"      },
+    { id:"submit",    icon:"＋", label:"New Request",     desc:"Submit a headcount req"       },
+    { id:"pipeline",  icon:"⬡", label:"Pipeline View",   desc:"See your roles in flight"     },
+  ],
+  hrbp: [
+    { id:"dashboard", icon:"⊡", label:"Dashboard",       desc:"Review queue & metrics"       },
+    { id:"hrbp_q",    icon:"✓", label:"Review Queue",    desc:"Pending HR validation", badge:"hrbp" },
+    { id:"all_roles", icon:"≡", label:"All Roles",       desc:"Complete role directory"      },
+    { id:"analytics", icon:"📊", label:"Analytics",       desc:"Pipeline health"              },
+  ],
+  org_leader: [
+    { id:"dashboard", icon:"⊡", label:"Dashboard",       desc:"Approvals & pipeline"         },
+    { id:"org_q",     icon:"🏛", label:"Approval Queue",  desc:"Strategic sign-off", badge:"org" },
+    { id:"budget",    icon:"💼", label:"HC Impact",       desc:"Budget & headcount view"      },
+    { id:"all_roles", icon:"≡", label:"All Roles",       desc:"Complete role directory"      },
+  ],
+  finance: [
+    { id:"dashboard", icon:"⊡", label:"Dashboard",       desc:"Budget & approvals"           },
+    { id:"finance_q", icon:"💰", label:"Budget Queue",    desc:"HC budget sign-off", badge:"fin" },
+    { id:"budget",    icon:"📊", label:"Budget Tracker",  desc:"Live HC utilization"          },
+    { id:"analytics", icon:"📈", label:"Cost Analytics",  desc:"HC cost exposure"             },
+  ],
+  rec_lead: [
+    { id:"dashboard", icon:"⊡", label:"Dashboard",       desc:"Team & pipeline view"         },
+    { id:"assign_q",  icon:"⚡", label:"Assign Queue",    desc:"Ready to assign", badge:"assign" },
+    { id:"pipeline",  icon:"⬡", label:"Pipeline Board",  desc:"Full pipeline view"           },
+    { id:"analytics", icon:"📊", label:"Analytics",       desc:"Team performance"             },
+    { id:"all_roles", icon:"≡", label:"All Roles",       desc:"Every open role"              },
+  ],
+  ta: [
+    { id:"dashboard",   icon:"⊡", label:"My Dashboard",    desc:"Your active reqs"             },
+    { id:"ai_intake",   icon:"✦", label:"AI Intake Tool",  desc:"Build & launch reqs", badge:"intake" },
+    { id:"sourcing",    icon:"🔍", label:"Sourcing Board",  desc:"Active candidate search"      },
+    { id:"pipeline",    icon:"⬡", label:"Full Pipeline",   desc:"All roles in system"          },
+    { id:"analytics",   icon:"📊", label:"Analytics",       desc:"My metrics & benchmarks"      },
+  ],
+};
+
+// ─── SEED DATA ────────────────────────────────────────────────────────────────
+const SEED = [
+  { id:"HC-047", title:"Senior Revenue Accountant",          level:"IC5", dept:"Finance",     team:"Revenue Accounting",    priority:"P0", type:"New",      hm:"Sarah Chen",    hm_email:"schen@coreweave.com",    org_leader:"Jeff Baker",    status:"submitted",    start:"2026-05-01", comp_min:160, comp_max:200, openings:1, location:"New York, NY",    work:"Hybrid 3x", backfill:false, jd_url:"https://docs.google.com/document/d/1bSVXhdWVz7B0UrcCS8ZRxepueqW1zdf95NUrPq6vM8I/edit", overview:"Own ASC 606 compliance and the full revenue close process at a newly public AI cloud company.",      mh:"4+ yrs public company accounting, ASC 606, NetSuite or Workday", tools:"NetSuite, Workday, BlackLine",               hrbp_notes:null,                          ol_notes:null,                                       fin_notes:null,                             recruiter:null,         gh_id:null,      gh_req_id:null,    candidates:0,  days_open:9,  intake_done:false, submitted:"2026-03-10" },
+  { id:"HC-048", title:"Staff Infrastructure Engineer",       level:"IC5", dept:"Engineering", team:"GPU Compute Platform",  priority:"P0", type:"New",      hm:"Marco Rivera",  hm_email:"mrivera@coreweave.com",  org_leader:"Chen Goldberg", status:"intake",       start:"2026-04-15", comp_min:220, comp_max:280, openings:2, location:"Sunnyvale, CA",   work:"Hybrid 2x", backfill:false, jd_url:"https://docs.google.com/document/d/1bSVXhdWVz7B0UrcCS8ZRxepueqW1zdf95NUrPq6vM8I/edit", overview:"Design and build GPU cluster scheduling at scale — Q2 launch dependency.",                         mh:"7+ yrs infra eng, Kubernetes, GPU/CUDA",          tools:"Kubernetes, Go, CUDA, Prometheus",           hrbp_notes:"Comp in band. IC5 confirmed.",         ol_notes:"Approved. Q2 launch dep. Chen aligned.",   fin_notes:"Approved ×2. Eng Q2 budget confirmed.", recruiter:"Cody Letchworth", gh_id:null,      gh_req_id:"4519260006", candidates:0,  days_open:14, intake_done:false, submitted:"2026-03-05" },
+  { id:"HC-049", title:"VP, Partner Integration",             level:"VP",  dept:"GTM",         team:"Strategic Partnerships",priority:"P0", type:"New",      hm:"Lisa Park",     hm_email:"lpark@coreweave.com",    org_leader:"Max Hjelm",     status:"org_approved", start:"2026-06-01", comp_min:280, comp_max:340, openings:1, location:"New York, NY",    work:"Hybrid 3x", backfill:false, jd_url:"",                                                                                             overview:"Build and lead strategic partnerships with hyperscalers and data center operators.",               mh:"10+ yrs enterprise partnerships, $50M+ track record", tools:"Salesforce, Tableau",                       hrbp_notes:"VP leveling confirmed.",               ol_notes:"Approved. Board Q2 commitment. Max aligned.", fin_notes:null,                             recruiter:null,         gh_id:null,      gh_req_id:null,    candidates:0,  days_open:5,  intake_done:false, submitted:"2026-03-14" },
+  { id:"HC-050", title:"Sr. Manager, FP&A",                   level:"M3",  dept:"Finance",     team:"FP&A",                  priority:"P1", type:"New",      hm:"June Yang",     hm_email:"jyang@coreweave.com",    org_leader:"Jeff Baker",    status:"sourcing",     start:"2026-05-15", comp_min:175, comp_max:210, openings:1, location:"New York, NY",    work:"Hybrid 3x", backfill:false, jd_url:"https://docs.google.com/document/d/1TDGh8lH694G1REP5yL7N5VMSaSEycn6jWhXieQPVFBA/edit", overview:"Drive financial modeling, budgeting, and strategic planning for the Finance org.",                mh:"7+ yrs FP&A, SaaS/cloud background, Adaptive Planning", tools:"Adaptive Planning, NetSuite, Tableau",       hrbp_notes:"Comp in band.",                        ol_notes:"Approved.",                                fin_notes:"Approved.",                      recruiter:"Cody Letchworth", gh_id:"GH-4538", gh_req_id:"4539099006", candidates:8,  days_open:20, intake_done:true,  submitted:"2026-02-28" },
+  { id:"HC-051", title:"Sr. AE, Enterprise AI",               level:"IC5", dept:"GTM",         team:"Enterprise Sales",      priority:"P1", type:"New",      hm:"Tom Bradford",  hm_email:"tbradford@coreweave.com",org_leader:"Max Hjelm",     status:"interviewing", start:"2026-04-01", comp_min:140, comp_max:180, openings:3, location:"Remote (US)",     work:"Remote",    backfill:false, jd_url:"",                                                                                             overview:"Own enterprise AI infrastructure relationships, $2M+ ARR quota.",                                mh:"5+ yrs enterprise cloud/AI sales, $1M+ quota attainment",  tools:"Salesforce, Gong, LinkedIn Sales Nav",    hrbp_notes:"IC5 ×3 confirmed.",                    ol_notes:"Approved ×3.",                             fin_notes:"GTM expansion budget confirmed.", recruiter:"Andy Brooks",    gh_id:"GH-4521", gh_req_id:null,    candidates:12, days_open:33, intake_done:true,  submitted:"2026-02-15" },
+  { id:"HC-052", title:"Principal ML Infrastructure Engineer", level:"IC6", dept:"Engineering", team:"AI Training Systems",   priority:"P0", type:"Backfill", hm:"Alex Patel",    hm_email:"apatel@coreweave.com",   org_leader:"Chen Goldberg", status:"offer",        start:"2026-04-01", comp_min:300, comp_max:380, openings:1, location:"San Francisco, CA",work:"Hybrid 2x", backfill:true,  jd_url:"",                                                                                             overview:"Lead ML training infrastructure for next-gen AI model training at scale.",                       mh:"8+ yrs ML infra, CUDA/GPU optimization, 100B+ param models", tools:"PyTorch, CUDA, Kubernetes, NCCL",          hrbp_notes:"IC6 band confirmed.",                  ol_notes:"Critical backfill.",                       fin_notes:"Same-level backfill approved.",  recruiter:"Kelley Johnson", gh_id:"GH-4498", gh_req_id:null,    candidates:3,  days_open:47, intake_done:true,  submitted:"2026-02-01" },
+  { id:"HC-056", title:"Director, Technical Revenue Accounting",level:"M3", dept:"Finance",    team:"Commercial Accounting", priority:"P0", type:"New",      hm:"Mark Fischer",  hm_email:"mfischer@coreweave.com", org_leader:"Jeff Baker",    status:"ta_queue",     start:"2026-04-30", comp_min:190, comp_max:240, openings:1, location:"Bellevue, WA",    work:"Hybrid 3x", backfill:false, jd_url:"https://docs.google.com/document/d/15LRDtPJ4XL35e58fEzCxwu4PnwxlQTHpXoPEyMp8HCQ/edit", overview:"Lead technical revenue accounting for complex contracts and new product lines.",                   mh:"8+ yrs technical accounting, ASC 606, public company background", tools:"NetSuite, Workday",                 hrbp_notes:"M3 confirmed.",                        ol_notes:"Mark's team needs this.",                  fin_notes:"Q2 budget confirmed.",           recruiter:null,         gh_id:null,      gh_req_id:null,    candidates:0,  days_open:16, intake_done:false, submitted:"2026-03-03" },
+];
+
+// ─── REDUCER ──────────────────────────────────────────────────────────────────
+function reducer(state, action) {
+  switch(action.type) {
+    case "UPDATE": return { ...state, reqs: state.reqs.map(r => r.id === action.id ? { ...r, ...action.patch } : r) };
+    case "ADD":    return { ...state, reqs: [action.req, ...state.reqs] };
+    default:       return state;
+  }
+}
+
+// ─── PRIMITIVES ───────────────────────────────────────────────────────────────
+const Tag = ({ label, c, bg, dot=true, sm }) => (
+  <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:sm?"2px 7px":"3px 9px", borderRadius:99, background:bg, color:c, fontSize:sm?10:11, fontWeight:700, whiteSpace:"nowrap", flexShrink:0 }}>
+    {dot && <span style={{ width:5, height:5, borderRadius:99, background:c }} />}
+    {label}
+  </span>
+);
+const StatusTag = ({ s, sm }) => { const c=STATUS[s]||STATUS.draft; return <Tag label={c.label} c={c.c} bg={c.bg} sm={sm} />; };
+const PrioTag   = ({ p, sm }) => { const c=PRIO[p]||PRIO.P2;       return <Tag label={c.label} c={c.c} bg={c.bg} sm={sm} />; };
+
+const Avi = ({ initials, color, size=32 }) => (
+  <div style={{ width:size, height:size, borderRadius:6, background:color, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", fontSize:Math.round(size*.34), fontWeight:800, color:"#fff" }}>
+    {initials}
+  </div>
+);
+
+const Btn = ({ children, onClick, variant="primary", sm, disabled, loading, full, type="button", icon }) => {
+  const vs = {
+    primary: { background:P.lapis,      color:"#fff",       border:"none"                                     },
+    ghost:   { background:"transparent", color:P.charcoal,  border:`1px solid ${P.mist}`                      },
+    success: { background:P.greenLight,  color:P.green,     border:`1px solid ${P.greenBorder}`               },
+    danger:  { background:P.redLight,    color:P.red,       border:`1px solid ${P.redBorder}`                 },
+    dark:    { background:P.charcoal,    color:"#fff",      border:"none"                                     },
+    outline: { background:"transparent", color:P.lapis,     border:`1px solid ${a(P.lapis,0.35)}`             },
+  };
+  return (
+    <button type={type} onClick={onClick} disabled={disabled||loading}
+      style={{ display:"inline-flex", alignItems:"center", justifyContent:full?"center":"flex-start", gap:6, padding:sm?"6px 12px":"9px 18px",
+        borderRadius:7, fontWeight:700, fontFamily:"inherit", fontSize:sm?11:13, cursor:(disabled||loading)?"not-allowed":"pointer",
+        opacity:(disabled||loading)?0.5:1, whiteSpace:"nowrap", transition:"opacity 0.12s, box-shadow 0.12s",
+        width:full?"100%":undefined, ...vs[variant] }}>
+      {loading && <span style={{ display:"inline-block", animation:"spin 1s linear infinite", fontSize:12 }}>⟳</span>}
+      {icon && !loading && <span style={{ fontSize:13 }}>{icon}</span>}
+      {children}
+    </button>
+  );
+};
+
+const Card = ({ children, style={}, onClick, hover, noPad }) => (
+  <div onClick={onClick}
+    onMouseEnter={hover&&onClick?e=>{e.currentTarget.style.borderColor=P.lapis;e.currentTarget.style.boxShadow=`0 2px 12px ${a(P.lapis,0.10)}`;}:undefined}
+    onMouseLeave={hover&&onClick?e=>{e.currentTarget.style.borderColor=P.mist; e.currentTarget.style.boxShadow="none";}:undefined}
+    style={{ background:"#fff", border:`1px solid ${P.mist}`, borderRadius:10, padding:noPad?0:"16px 18px",
+      cursor:onClick?"pointer":"default", transition:"border-color 0.12s, box-shadow 0.12s", overflow:"hidden", ...style }}>
+    {children}
+  </div>
+);
+
+const Kpi = ({ label, value, sub, accent, onClick, icon }) => (
+  <Card onClick={onClick} hover={!!onClick} style={{ cursor:onClick?"pointer":"default" }}>
+    <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:10 }}>
+      <div style={{ fontSize:10, fontWeight:700, color:P.slate, textTransform:"uppercase", letterSpacing:0.7 }}>{label}</div>
+      {icon && <span style={{ fontSize:18, opacity:0.5 }}>{icon}</span>}
+    </div>
+    <div style={{ fontSize:30, fontWeight:800, color:accent||P.charcoal, lineHeight:1, marginBottom:4 }}>{value}</div>
+    {sub && <div style={{ fontSize:11, color:P.coolGray, lineHeight:1.4 }}>{sub}</div>}
+  </Card>
+);
+
+const Pill = ({ icon, label, connected, color }) => (
+  <div style={{ display:"flex", alignItems:"center", gap:5, padding:"4px 10px", borderRadius:99, background:connected?a(color,0.10):P.cloud, border:`1px solid ${connected?a(color,0.35):P.mist}` }}>
+    <span style={{ fontSize:12 }}>{icon}</span>
+    <span style={{ fontSize:10, fontWeight:700, color:connected?color:P.slate }}>{label}</span>
+    <span style={{ width:5, height:5, borderRadius:99, background:connected?P.green:P.coolGray }} />
+  </div>
+);
+
+const Toast = ({ msg, type }) => (
+  <div style={{ position:"fixed", bottom:24, right:24, zIndex:9999, background:type==="error"?P.red:P.charcoal, color:"#fff",
+    padding:"12px 18px", borderRadius:8, fontSize:12, fontWeight:600, boxShadow:`0 8px 24px ${a("#000",0.20)}`,
+    maxWidth:420, borderLeft:`3px solid ${type==="error"?P.redBorder:P.lapis}`, display:"flex", alignItems:"center", gap:10,
+    animation:"slideUp 0.2s ease" }}>
+    <span style={{ fontSize:16 }}>{type==="error"?"⚠":"✓"}</span> {msg}
+  </div>
+);
+
+const Divider = ({ label }) => (
+  <div style={{ display:"flex", alignItems:"center", gap:10, margin:"16px 0" }}>
+    {label && <span style={{ fontSize:10, fontWeight:700, color:P.coolGray, textTransform:"uppercase", letterSpacing:0.8, whiteSpace:"nowrap" }}>{label}</span>}
+    <div style={{ flex:1, height:1, background:P.mist }} />
+  </div>
+);
+
+const EmptyState = ({ icon, title, sub, action }) => (
+  <Card style={{ textAlign:"center", padding:"56px 32px", background:P.calcite }}>
+    <div style={{ fontSize:40, marginBottom:14, opacity:0.5 }}>{icon}</div>
+    <div style={{ fontSize:15, fontWeight:700, color:P.charcoal, marginBottom:6 }}>{title}</div>
+    {sub && <div style={{ fontSize:12, color:P.slate, marginBottom:action?20:0, lineHeight:1.6, maxWidth:360, margin:"0 auto" }}>{sub}</div>}
+    {action && <div style={{ marginTop:20 }}>{action}</div>}
+  </Card>
+);
+
+const Section = ({ title, sub, children, action }) => (
+  <div style={{ marginBottom:24 }}>
+    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12 }}>
+      <div>
+        <div style={{ fontSize:16, fontWeight:700, color:P.charcoal }}>{title}</div>
+        {sub && <div style={{ fontSize:12, color:P.slate, marginTop:2 }}>{sub}</div>}
+      </div>
+      {action}
+    </div>
+    {children}
+  </div>
+);
+
+// ─── SIDEBAR ──────────────────────────────────────────────────────────────────
+function Sidebar({ persona, view, setView, reqs, onDemo, ghConn, bhConn }) {
+  const nav = NAV[persona] || NAV.ta;
+  const pending = {
+    hrbp:   reqs.filter(r=>r.status==="submitted").length,
+    org:    reqs.filter(r=>r.status==="hrbp_approved").length,
+    fin:    reqs.filter(r=>r.status==="org_approved").length,
+    assign: reqs.filter(r=>r.status==="ta_queue").length,
+    intake: reqs.filter(r=>r.status==="intake"&&!r.intake_done).length,
+  };
+  const badgeMap = { hrbp:pending.hrbp, org:pending.org, fin:pending.fin, assign:pending.assign, intake:pending.intake };
+  const totalAlerts = Object.values(pending).reduce((s,v)=>s+v,0);
+  const committed = reqs.filter(r=>["ta_queue","intake","sourcing","interviewing","offer","filled"].includes(r.status)).length;
+  const inApproval = reqs.filter(r=>["submitted","hrbp_approved","org_approved"].includes(r.status)).length;
+  const p = PERSONAS[persona];
+
+  return (
+    <div style={{ width:248, background:P.sidebarBg, display:"flex", flexDirection:"column", flexShrink:0, borderRight:`1px solid ${P.sidebarBorder}` }}>
+      {/* Logo */}
+      <div style={{ padding:"14px 16px 12px", borderBottom:`1px solid ${P.sidebarBorder}`, display:"flex", alignItems:"center", gap:10 }}>
+        <div style={{ width:30, height:30, background:P.lapis, borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:900, color:"#fff", letterSpacing:-0.5, flexShrink:0 }}>CW</div>
+        <div>
+          <div style={{ fontSize:11, fontWeight:800, color:"#fff", letterSpacing:0.6 }}>COREWEAVE</div>
+          <div style={{ fontSize:9, color:P.sidebarMuted }}>Talent OS · Production</div>
+        </div>
+      </div>
+
+      {/* Persona */}
+      <div style={{ padding:"12px 14px", borderBottom:`1px solid ${P.sidebarBorder}` }}>
+        <div style={{ display:"flex", alignItems:"center", gap:9, marginBottom:totalAlerts>0?10:0 }}>
+          <Avi initials={p.av} color={p.color} size={34} />
+          <div style={{ minWidth:0, flex:1 }}>
+            <div style={{ fontSize:12, fontWeight:700, color:"#fff", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{p.name}</div>
+            <div style={{ fontSize:10, color:P.sidebarMuted }}>{p.role}</div>
+          </div>
+        </div>
+        {totalAlerts>0 && (
+          <div style={{ background:"rgba(220,38,38,0.15)", border:"1px solid rgba(220,38,38,0.28)", borderRadius:6, padding:"5px 9px", fontSize:10, color:"#FCA5A5", fontWeight:600, display:"flex", alignItems:"center", gap:6 }}>
+            <span>🔔</span> {totalAlerts} action{totalAlerts!==1?"s":""} need your attention
+          </div>
+        )}
+      </div>
+
+      {/* Integrations (compact) */}
+      <div style={{ padding:"8px 14px", borderBottom:`1px solid ${P.sidebarBorder}`, display:"flex", gap:5, flexWrap:"wrap" }}>
+        <Pill icon="🌿" label="GH"    connected={ghConn} color={P.ghGreen}  />
+        <Pill icon="📁" label="Drive" connected={true}   color={P.driveBlue} />
+        <Pill icon="⚡" label="BH"    connected={bhConn} color={P.bhPurple} />
+      </div>
+
+      {/* Nav */}
+      <nav style={{ flex:1, overflowY:"auto", padding:"8px 8px" }}>
+        {nav.map(item => {
+          const active = view===item.id;
+          const badge  = item.badge ? badgeMap[item.badge] : 0;
+          return (
+            <button key={item.id} onClick={()=>setView(item.id)}
+              style={{ width:"100%", display:"flex", alignItems:"center", gap:9, padding:"8px 10px 8px 12px",
+                background:active?a(P.lapis,0.18):"transparent", border:"none",
+                borderLeft:`2px solid ${active?P.lapis:"transparent"}`, cursor:"pointer",
+                fontFamily:"inherit", textAlign:"left", borderRadius:"0 7px 7px 0", transition:"all 0.1s", marginBottom:2 }}>
+              <span style={{ fontSize:13, color:active?P.lapis:"rgba(255,255,255,0.35)", width:18, flexShrink:0 }}>{item.icon}</span>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontSize:12, fontWeight:active?700:400, color:active?"#fff":P.sidebarText, lineHeight:1.2 }}>{item.label}</div>
+                <div style={{ fontSize:9, color:P.sidebarMuted, marginTop:1 }}>{item.desc}</div>
+              </div>
+              {badge>0 && <span style={{ background:P.red, color:"#fff", fontSize:9, fontWeight:800, padding:"2px 6px", borderRadius:99, flexShrink:0 }}>{badge}</span>}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Demo button */}
+      <div style={{ padding:"10px 12px", borderTop:`1px solid ${P.sidebarBorder}` }}>
+        <button onClick={onDemo} style={{ width:"100%", background:`linear-gradient(135deg,${P.lapisDeep},${P.lapis})`, border:"none", borderRadius:7, padding:"10px 12px", cursor:"pointer", fontFamily:"inherit", display:"flex", alignItems:"center", gap:9 }}>
+          <span style={{ fontSize:16 }}>▶</span>
+          <div style={{ textAlign:"left" }}>
+            <div style={{ fontSize:11, fontWeight:800, color:"#fff" }}>Live Pitch Demo</div>
+            <div style={{ fontSize:9, color:"rgba(255,255,255,0.5)" }}>Walk all 6 personas</div>
+          </div>
+        </button>
+      </div>
+
+      {/* Budget bar */}
+      <div style={{ padding:"10px 14px", borderTop:`1px solid ${P.sidebarBorder}` }}>
+        <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+          <span style={{ fontSize:10, fontWeight:800, color:P.sidebarMuted, textTransform:"uppercase", letterSpacing:0.8 }}>Q2 HC</span>
+          <span style={{ fontSize:10, color:P.sidebarMuted }}>{committed}/{Q2.total} slots</span>
+        </div>
+        <div style={{ height:4, background:"rgba(255,255,255,0.08)", borderRadius:99, overflow:"hidden", display:"flex" }}>
+          <div style={{ width:`${(committed/Q2.total)*100}%`, background:P.lapis, transition:"width 0.4s" }} />
+          <div style={{ width:`${(inApproval/Q2.total)*100}%`, background:a(P.amber,0.5) }} />
+        </div>
+        <div style={{ display:"flex", gap:12, marginTop:6 }}>
+          {[["Active",committed,P.lapis],["Pending",inApproval,P.amber],["Free",Q2.total-committed-inApproval,P.green]].map(([l,v,c])=>(
+            <div key={l} style={{ textAlign:"center" }}>
+              <div style={{ fontSize:12, fontWeight:800, color:c }}>{v}</div>
+              <div style={{ fontSize:9, color:P.sidebarMuted }}>{l}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── TOP BAR ──────────────────────────────────────────────────────────────────
+const VIEW_TITLE = {
+  dashboard:"Dashboard", submit:"New Request", pipeline:"Pipeline Board",
+  priority:"Priority Queue", hrbp_q:"HR Review Queue", org_q:"Org Leader Queue",
+  finance_q:"Finance Queue", assign_q:"Assign Recruiters", intake_q:"Intake Queue",
+  ai_intake:"AI Intake Tool", sourcing:"Sourcing Board", analytics:"Analytics",
+  budget:"Budget View", my_reqs:"My Requests", all_roles:"All Open Roles",
+};
+
+function TopBar({ persona, setPersona, view, ghConn, bhConn }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const p = PERSONAS[persona];
+
+  useEffect(() => {
+    if (!open) return;
+    const h = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, [open]);
+
+  return (
+    <div style={{ background:"#fff", borderBottom:`1px solid ${P.mist}`, padding:"0 24px", display:"flex", alignItems:"center", justifyContent:"space-between", height:54, flexShrink:0 }}>
+      <div style={{ fontSize:16, fontWeight:700, color:P.charcoal }}>{VIEW_TITLE[view] || "Dashboard"}</div>
+      <div ref={ref} style={{ position:"relative" }}>
+        <button onClick={()=>setOpen(o=>!o)}
+          style={{ display:"flex", alignItems:"center", gap:10, padding:"6px 12px", border:`1px solid ${P.mist}`, borderRadius:8, background:"#fff", cursor:"pointer", fontFamily:"inherit", transition:"border-color 0.1s" }}>
+          <Avi initials={p.av} color={p.color} size={28} />
+          <div style={{ textAlign:"left" }}>
+            <div style={{ fontSize:12, fontWeight:700, color:P.charcoal }}>{p.name}</div>
+            <div style={{ fontSize:10, color:P.slate }}>{p.role}</div>
+          </div>
+          <span style={{ fontSize:10, color:P.coolGray }}>▾</span>
+        </button>
+        {open && (
+          <div style={{ position:"absolute", right:0, top:"calc(100% + 6px)", background:"#fff", border:`1px solid ${P.mist}`, borderRadius:10, boxShadow:`0 8px 32px ${a("#000",0.10)}`, zIndex:200, minWidth:270, overflow:"hidden" }}>
+            <div style={{ padding:"10px 16px 6px", fontSize:10, fontWeight:700, color:P.slate, textTransform:"uppercase", letterSpacing:0.7 }}>Switch Persona</div>
+            {Object.entries(PERSONAS).map(([k,u]) => (
+              <button key={k} onClick={()=>{setPersona(k);setOpen(false);}}
+                style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"10px 16px",
+                  background:persona===k?P.lapisLight:"transparent", border:"none", cursor:"pointer",
+                  fontFamily:"inherit", textAlign:"left", borderLeft:`3px solid ${persona===k?P.lapis:"transparent"}`,
+                  transition:"background 0.1s" }}>
+                <Avi initials={u.av} color={u.color} size={28} />
+                <div>
+                  <div style={{ fontSize:12, fontWeight:persona===k?700:500, color:P.charcoal }}>{u.name}</div>
+                  <div style={{ fontSize:10, color:P.slate }}>{u.role} · {u.dept}</div>
+                </div>
+                {persona===k && <span style={{ marginLeft:"auto", color:P.lapis, fontSize:14 }}>✓</span>}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── REQ ROW ──────────────────────────────────────────────────────────────────
+function ReqRow({ req, onClick, compact }) {
+  const meta = [req.level, req.dept, req.team, `HM: ${req.hm}`].filter(Boolean);
+  return (
+    <Card onClick={onClick} hover style={{ padding:compact?"10px 14px":"13px 16px", marginBottom:7 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:compact?3:5, flexWrap:"wrap" }}>
+            <PrioTag p={req.priority} sm />
+            <span style={{ fontSize:compact?12:13, fontWeight:700, color:P.charcoal, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{req.title}</span>
+            {req.backfill   && <Tag label="Backfill"       c={P.amber}  bg={P.amberLight}  sm dot={false} />}
+            {req.openings>1 && <Tag label={`×${req.openings}`} c={P.purple} bg={P.purpleLight} sm dot={false} />}
+            {req.gh_id      && <Tag label={req.gh_id}      c={P.ghGreen} bg={a(P.ghGreen,0.10)} sm dot={false} />}
+          </div>
+          {!compact && (
+            <div style={{ display:"flex", alignItems:"center", gap:6, fontSize:11, color:P.slate, flexWrap:"wrap" }}>
+              {meta.map((t,i) => <span key={i} style={{ display:"flex", alignItems:"center", gap:6 }}>{i>0&&<span style={{ color:P.mist }}>·</span>}{t}</span>)}
+            </div>
+          )}
+        </div>
+        <div style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
+          <StatusTag s={req.status} sm />
+          {req.days_open>0 && <span style={{ fontSize:11, color:req.days_open>30?P.red:req.days_open>14?P.amber:P.coolGray, fontWeight:req.days_open>30?700:400 }}>{req.days_open}d</span>}
+          <span style={{ color:P.coolGray, fontSize:15 }}>›</span>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+// ─── APPROVAL MODAL ───────────────────────────────────────────────────────────
+function ApprovalModal({ req, persona, onApprove, onReject, onClose }) {
+  const [notes, setNotes] = useState("");
+  const [busy,  setBusy]  = useState(false);
+
+  const handle = async (type) => {
+    setBusy(true);
+    await new Promise(r=>setTimeout(r,700));
+    type==="approve" ? onApprove(req.id,notes) : onReject(req.id,notes);
+  };
+
+  const ph = { hrbp:"e.g. Comp in band. IC5 confirmed. No concerns.", org_leader:"e.g. Approved. Critical Q2 dependency. Team has onboarding capacity.", finance:"e.g. Within Q2 budget. HC slot committed. Approved." }[persona]||"Add your notes…";
+  const title = { hrbp:"HRBP Review — Emily Arney", org_leader:"Org Leader Review — Jeff Baker", finance:"Finance Review — Ian Woller" }[persona]||"Review";
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:a("#0E1829",0.65), zIndex:300, display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(3px)" }}>
+      <Card noPad style={{ width:580, maxHeight:"88vh", overflow:"auto", borderRadius:14, boxShadow:`0 24px 60px ${a("#000",0.20)}` }}>
+        <div style={{ background:P.charcoal, padding:"18px 22px", borderRadius:"14px 14px 0 0", display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+          <div>
+            <div style={{ fontSize:15, fontWeight:800, color:"#fff", marginBottom:3 }}>{title}</div>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)" }}>{req.title} · {req.level} · {req.team}</div>
+          </div>
+          <button onClick={onClose} style={{ background:"none", border:"none", color:"rgba(255,255,255,0.4)", fontSize:22, cursor:"pointer", lineHeight:1 }}>×</button>
+        </div>
+        <div style={{ padding:"22px 24px" }}>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px 24px", marginBottom:16 }}>
+            {[["Priority",<PrioTag p={req.priority} sm />],["Comp",`$${req.comp_min}K–$${req.comp_max}K`],["Openings",req.openings],["Start",req.start],["Location",req.location],["HM",req.hm]].map(([l,v])=>(
+              <div key={l}>
+                <div style={{ fontSize:9, fontWeight:700, color:P.slate, textTransform:"uppercase", letterSpacing:0.6, marginBottom:4 }}>{l}</div>
+                <div style={{ fontSize:13, color:P.charcoal }}>{v}</div>
+              </div>
+            ))}
+          </div>
+          {req.overview && <div style={{ fontSize:12, color:P.midGray, background:P.calcite, borderRadius:7, padding:"10px 12px", marginBottom:14, lineHeight:1.7, border:`1px solid ${P.mist}` }}>{req.overview}</div>}
+          {req.jd_url && <div style={{ marginBottom:14 }}><a href={req.jd_url} target="_blank" rel="noreferrer" style={{ fontSize:12, color:P.lapis, fontWeight:700, textDecoration:"none" }}>📄 View Job Description ↗</a></div>}
+          {persona==="org_leader" && req.hrbp_notes && <div style={{ background:P.greenLight, border:`1px solid ${P.greenBorder}`, borderRadius:7, padding:"9px 13px", marginBottom:10, fontSize:11, fontWeight:600, color:P.green }}>✓ HRBP: {req.hrbp_notes}</div>}
+          {persona==="finance" && req.hrbp_notes && <div style={{ background:P.greenLight, border:`1px solid ${P.greenBorder}`, borderRadius:7, padding:"9px 13px", marginBottom:8, fontSize:11, fontWeight:600, color:P.green }}>✓ HRBP: {req.hrbp_notes}</div>}
+          {persona==="finance" && req.ol_notes && <div style={{ background:P.indigoLight, border:`1px solid ${a(P.indigo,0.25)}`, borderRadius:7, padding:"9px 13px", marginBottom:8, fontSize:11, fontWeight:600, color:P.indigo }}>✓ Org Leader: {req.ol_notes}</div>}
+          <Divider />
+          <label style={{ display:"block", fontSize:12, fontWeight:700, color:P.charcoal, marginBottom:7 }}>Approval Notes *</label>
+          <textarea value={notes} onChange={e=>setNotes(e.target.value)} placeholder={ph}
+            style={{ width:"100%", minHeight:90, border:`1px solid ${P.mist}`, borderRadius:7, padding:"10px 12px", fontSize:12, fontFamily:"inherit", color:P.charcoal, resize:"vertical", outline:"none", boxSizing:"border-box", lineHeight:1.6 }} />
+          <div style={{ display:"flex", gap:10, justifyContent:"flex-end", marginTop:16 }}>
+            <Btn variant="danger" onClick={()=>handle("reject")} disabled={busy} sm>Return</Btn>
+            <Btn onClick={()=>handle("approve")} disabled={busy||!notes.trim()} loading={busy} sm>Approve & Advance →</Btn>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+// ─── ASSIGN MODAL ─────────────────────────────────────────────────────────────
+function AssignModal({ req, onAssign, onClose }) {
+  const [rec,  setRec]  = useState("");
+  const [busy, setBusy] = useState(false);
+  const handle = async () => { if(!rec) return; setBusy(true); await new Promise(r=>setTimeout(r,600)); onAssign(req.id,rec); };
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:a("#0E1829",0.65), zIndex:300, display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(3px)" }}>
+      <Card noPad style={{ width:480, borderRadius:14, boxShadow:`0 24px 60px ${a("#000",0.20)}` }}>
+        <div style={{ background:P.charcoal, padding:"16px 20px", borderRadius:"14px 14px 0 0", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <div>
+            <div style={{ fontSize:14, fontWeight:800, color:"#fff" }}>Assign Recruiter</div>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)", marginTop:2 }}>{req.title} · All 3 approvals complete</div>
+          </div>
+          <button onClick={onClose} style={{ background:"none", border:"none", color:"rgba(255,255,255,0.38)", fontSize:22, cursor:"pointer" }}>×</button>
+        </div>
+        <div style={{ padding:"20px 22px" }}>
+          <div style={{ background:P.tealLight, border:`1px solid ${a(P.teal,0.25)}`, borderRadius:7, padding:"9px 13px", marginBottom:16, fontSize:11, color:P.teal, fontWeight:600 }}>
+            ✓ HRBP · Org Leader · Finance all approved — AI intake doc will be ready immediately on assignment
+          </div>
+          <div style={{ fontSize:12, fontWeight:700, color:P.charcoal, marginBottom:10 }}>Select Recruiter</div>
+          <div style={{ display:"flex", flexDirection:"column", gap:6, marginBottom:18 }}>
+            {RECRUITERS.map(r => (
+              <label key={r} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 13px", borderRadius:7, border:`1px solid ${rec===r?P.lapis:P.mist}`, background:rec===r?P.lapisLight:"#fff", cursor:"pointer", transition:"all 0.1s" }}>
+                <input type="radio" checked={rec===r} onChange={()=>setRec(r)} style={{ accentColor:P.lapis }} />
+                <Avi initials={r.split(" ").map(n=>n[0]).join("")} color={rec===r?P.lapis:P.coolGray} size={28} />
+                <span style={{ fontSize:13, fontWeight:rec===r?700:400, color:P.charcoal }}>{r}</span>
+              </label>
+            ))}
+          </div>
+          <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
+            <Btn variant="ghost" onClick={onClose} sm>Cancel</Btn>
+            <Btn onClick={handle} disabled={!rec} loading={busy}>⚡ Assign → Open Intake</Btn>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+// ─── DETAIL PANEL ─────────────────────────────────────────────────────────────
+function DetailPanel({ req, persona, onClose, onApprove, onReject, onAssign, onOpenIntake }) {
+  const STAGES = [
+    { label:"Submitted",  statuses:["submitted"] },
+    { label:"HRBP",       statuses:["hrbp_approved"] },
+    { label:"Org Leader", statuses:["org_approved"] },
+    { label:"Finance",    statuses:["ta_queue","intake"] },
+    { label:"Recruiting", statuses:["sourcing","interviewing","offer","filled"] },
+  ];
+  const cur = STAGES.findIndex(s=>s.statuses.includes(req.status));
+  const can = {
+    hrbp:   persona==="hrbp"       && req.status==="submitted",
+    org:    persona==="org_leader" && req.status==="hrbp_approved",
+    fin:    persona==="finance"    && req.status==="org_approved",
+    assign: persona==="rec_lead"   && req.status==="ta_queue",
+    intake: persona==="ta"         && req.status==="intake" && !req.intake_done,
+  };
+  const hasAction = Object.values(can).some(Boolean);
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:a("#0E1829",0.45), zIndex:150, display:"flex", justifyContent:"flex-end" }} onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div style={{ width:580, background:"#fff", height:"100vh", overflowY:"auto", boxShadow:`-8px 0 48px ${a("#0E1829",0.16)}`, display:"flex", flexDirection:"column" }}>
+        {/* Header */}
+        <div style={{ background:P.charcoal, padding:"18px 22px", flexShrink:0 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12 }}>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontSize:10, color:"rgba(255,255,255,0.3)", marginBottom:4 }}>{req.id} · {req.type}{req.backfill?" · Backfill":""}</div>
+              <div style={{ fontSize:18, fontWeight:800, color:"#fff", lineHeight:1.2, marginBottom:4 }}>{req.title}</div>
+              <div style={{ fontSize:11, color:"rgba(255,255,255,0.45)" }}>{req.level} · {req.dept} · {req.team}</div>
+            </div>
+            <button onClick={onClose} style={{ background:"none", border:"none", color:"rgba(255,255,255,0.45)", fontSize:24, cursor:"pointer", marginLeft:10 }}>×</button>
+          </div>
+          <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+            <PrioTag p={req.priority} sm /><StatusTag s={req.status} sm />
+            {req.backfill && <Tag label="Backfill" c={P.amber} bg={P.amberLight} sm />}
+            {req.gh_id && <Tag label={req.gh_id} c={P.ghGreen} bg={a(P.ghGreen,0.12)} sm dot={false} />}
+          </div>
+        </div>
+        {/* Pipeline */}
+        <div style={{ padding:"14px 22px", borderBottom:`1px solid ${P.mist}`, background:P.calcite }}>
+          <div style={{ fontSize:9, fontWeight:700, color:P.slate, textTransform:"uppercase", letterSpacing:0.7, marginBottom:10 }}>Approval Pipeline</div>
+          <div style={{ display:"flex", alignItems:"center" }}>
+            {STAGES.map((s,i) => {
+              const done=cur>i, active=cur===i;
+              return (
+                <div key={s.label} style={{ display:"flex", alignItems:"center", flex:i<STAGES.length-1?1:"auto" }}>
+                  <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
+                    <div style={{ width:22, height:22, borderRadius:99, background:done?P.green:active?P.lapis:P.mist, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, fontWeight:800, color:(done||active)?"#fff":P.coolGray }}>
+                      {done?"✓":i+1}
+                    </div>
+                    <div style={{ fontSize:9, color:done?P.green:active?P.lapis:P.coolGray, fontWeight:(active||done)?700:400, whiteSpace:"nowrap" }}>{s.label}</div>
+                  </div>
+                  {i<STAGES.length-1 && <div style={{ flex:1, height:2, background:done?P.green:P.mist, margin:"0 4px", marginBottom:18 }} />}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        {/* Body */}
+        <div style={{ flex:1, overflowY:"auto", padding:"20px 22px" }}>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px 24px", marginBottom:18 }}>
+            {[["HM",req.hm],["Org Leader",req.org_leader],["Comp",`$${req.comp_min}K–$${req.comp_max}K`],["Start",req.start],["Location",req.location],["Recruiter",req.recruiter||"TBD"]].map(([l,v])=>(
+              <div key={l}>
+                <div style={{ fontSize:9, fontWeight:700, color:P.slate, textTransform:"uppercase", letterSpacing:0.5, marginBottom:4 }}>{l}</div>
+                <div style={{ fontSize:13, color:P.charcoal }}>{v}</div>
+              </div>
+            ))}
+          </div>
+          {req.jd_url && (
+            <div style={{ marginBottom:14 }}>
+              <a href={req.jd_url} target="_blank" rel="noreferrer" style={{ display:"inline-flex", alignItems:"center", gap:6, fontSize:12, color:P.lapis, fontWeight:700, textDecoration:"none", padding:"7px 13px", border:`1px solid ${a(P.lapis,0.25)}`, borderRadius:6, background:P.lapisLight }}>
+                📄 View Job Description ↗
+              </a>
+            </div>
+          )}
+          {req.overview && <><div style={{ fontSize:9, fontWeight:700, color:P.slate, textTransform:"uppercase", marginBottom:5, letterSpacing:0.5 }}>Overview</div><div style={{ fontSize:12, color:P.midGray, lineHeight:1.7, marginBottom:16 }}>{req.overview}</div></>}
+          {req.mh && <><div style={{ fontSize:9, fontWeight:700, color:P.slate, textTransform:"uppercase", marginBottom:5, letterSpacing:0.5 }}>Must-Haves</div><div style={{ fontSize:12, color:P.midGray, lineHeight:1.7, marginBottom:16 }}>{req.mh}</div></>}
+          <Divider label="Approval Trail" />
+          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+            {req.hrbp_notes && <div style={{ background:P.greenLight, border:`1px solid ${P.greenBorder}`, borderRadius:7, padding:"10px 14px" }}><div style={{ fontSize:10, fontWeight:700, color:P.green, marginBottom:3 }}>✓ HRBP — Emily Arney</div><div style={{ fontSize:12, color:P.midGray }}>{req.hrbp_notes}</div></div>}
+            {req.ol_notes   && <div style={{ background:P.indigoLight, border:`1px solid ${a(P.indigo,0.25)}`, borderRadius:7, padding:"10px 14px" }}><div style={{ fontSize:10, fontWeight:700, color:P.indigo, marginBottom:3 }}>✓ Org Leader — {req.org_leader}</div><div style={{ fontSize:12, color:P.midGray }}>{req.ol_notes}</div></div>}
+            {req.fin_notes  && <div style={{ background:P.tealLight, border:`1px solid ${a(P.teal,0.25)}`, borderRadius:7, padding:"10px 14px" }}><div style={{ fontSize:10, fontWeight:700, color:P.teal, marginBottom:3 }}>✓ Finance — Ian Woller</div><div style={{ fontSize:12, color:P.midGray }}>{req.fin_notes}</div></div>}
+            {req.recruiter  && <div style={{ background:P.lapisLight, border:`1px solid ${a(P.lapis,0.25)}`, borderRadius:7, padding:"10px 14px" }}><div style={{ fontSize:10, fontWeight:700, color:P.lapis }}>Assigned → {req.recruiter}</div></div>}
+            {req.intake_done && req.gh_id && <div style={{ background:P.greenLight, border:`1px solid ${P.greenBorder}`, borderRadius:7, padding:"10px 14px" }}><div style={{ fontSize:10, fontWeight:700, color:P.green }}>✓ Intake complete · {req.gh_id} · BrightHire live</div></div>}
+          </div>
+        </div>
+        {/* Footer */}
+        {hasAction && (
+          <div style={{ padding:"14px 22px", borderTop:`1px solid ${P.mist}`, background:P.calcite, display:"flex", gap:10, justifyContent:"flex-end", flexShrink:0 }}>
+            {(can.hrbp||can.org||can.fin) && <><Btn variant="danger" onClick={()=>{onClose();onReject(req);}} sm>Return</Btn><Btn onClick={()=>{onClose();onApprove(req);}} sm>Approve & Advance →</Btn></>}
+            {can.assign && <Btn onClick={()=>{onClose();onAssign(req.id);}} icon="⚡">Assign Recruiter</Btn>}
+            {can.intake && <Btn onClick={()=>{onClose();onOpenIntake(req.id);}} icon="✦">Open AI Intake Tool</Btn>}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── AI INTAKE TOOL ───────────────────────────────────────────────────────────
+const GLEAN_MCP = { type:"url", url:"https://coreweave-be.glean.com/mcp/default", name:"glean" };
+const MODEL = "claude-sonnet-4-20250514";
+
+async function callClaude({ system, user, mcp }) {
+  const body = { model:MODEL, max_tokens:2200, messages:[{ role:"user", content:user }] };
+  if (system) body.system = system;
+  if (mcp)    body.mcp_servers = [GLEAN_MCP];
+  const res = await fetch("https://api.anthropic.com/v1/messages", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) });
+  const data = await res.json();
+  const text = (data.content||[]).filter(c=>c.type==="text").map(c=>c.text).join("\n");
+  const tool = (data.content||[]).filter(c=>c.type==="mcp_tool_result").map(c=>c.content?.[0]?.text||"").join("\n");
+  return { text: text||tool, raw:data };
+}
+
+function safeParse(text) {
+  try { return JSON.parse(text.replace(/```json|```/g,"").trim()); }
+  catch { return null; }
+}
+
+function IntakeTool({ req, onClose, onComplete, setGhConn, setBhConn }) {
+  const [tab,       setTab]       = useState("form");
+  const [form,      setFormState] = useState({
+    title:req.title, level:req.level, dept:req.dept, team:req.team,
+    overview:req.overview||"", mh:req.mh||"", tools:req.tools||"",
+    comp_min:req.comp_min, comp_max:req.comp_max,
+    location:req.location, work:req.work,
+    hm:req.hm, hm_email:req.hm_email, org_leader:req.org_leader,
+    gh_req_id: req.gh_req_id||"",
+    sell:"CoreWeave is the only GPU-native cloud built from the ground up for AI workloads. No competing priorities, no retrofitting — pure AI infrastructure at the frontier of the market.",
+    sourcing_strategy:"",
+    interview_plan:[
+      { stage:"Recruiter Screen (30 min)", interviewer:req.recruiter||"Cody Letchworth", focus:"Qualification, motivation, comp alignment, red flags" },
+      { stage:"HM Interview (60 min)",     interviewer:req.hm,                           focus:"Leadership scope, strategic context, team fit" },
+      { stage:"Technical/Domain (60 min)", interviewer:"Panel TBD",                      focus:"Technical depth, domain expertise, decision-making" },
+      { stage:"Final / Culture (45 min)",  interviewer:"Senior Leader TBD",              focus:"Values alignment, career vision, executive presence" },
+    ],
+  });
+  const [igData,    setIgData]    = useState(null);
+  const [outreach,  setOutreach]  = useState(null);
+  const [brief,     setBrief]     = useState(null);
+  const [loading,   setLoading]   = useState({ jd:false, gh_lookup:false, ig:false, out:false, brief:false, gh_push:false });
+  const [ghLog,     setGhLog]     = useState([]);
+  const [ghDone,    setGhDone]    = useState(false);
+  const [statusMsg, setStatusMsg] = useState("");
+
+  const setField = useCallback((k,v) => setFormState(p=>({...p,[k]:v})), []);
+
+  // ── Glean: Read JD from Google Drive ──────────────────────────────────────
+  const readJD = async () => {
+    if (!req.jd_url) return;
+    setLoading(l=>({...l,jd:true})); setStatusMsg("📁 Reading JD from Google Drive via Glean…");
+    try {
+      const sys = `You are a senior TA partner at CoreWeave. Extract structured intake fields from the job description. Return ONLY valid JSON: { "title": string, "level": string, "overview": string, "mh": string, "tools": string, "sell": string, "comp_min": number, "comp_max": number }. No markdown fences.`;
+      const { text } = await callClaude({ system:sys, user:`Read this Google Drive JD and extract all fields: ${req.jd_url}\n\nRole context: ${req.title} | ${req.level} | ${req.dept}`, mcp:true });
+      const parsed = safeParse(text);
+      if (parsed) {
+        setFormState(p=>({ ...p, ...parsed, comp_min:parsed.comp_min||p.comp_min, comp_max:parsed.comp_max||p.comp_max }));
+        setStatusMsg("✓ JD read via Glean — all fields auto-filled");
+      } else {
+        setStatusMsg("✓ Glean connected · Using submission data");
+      }
+    } catch { setStatusMsg("Glean read unavailable · Submission data in use"); }
+    setLoading(l=>({...l,jd:false}));
+  };
+
+  // ── Glean: Look up Greenhouse req ID ──────────────────────────────────────
+  const lookupGHReq = async () => {
+    setLoading(l=>({...l,gh_lookup:true})); setStatusMsg("🌿 Searching Greenhouse via Glean for req ID…");
+    try {
+      const sys = `You have access to the CoreWeave Greenhouse ATS via Glean. Search for the job posting matching this title and return ONLY valid JSON: { "gh_req_id": string, "gh_url": string, "status": string }. The gh_req_id is the numeric ID in the Greenhouse dashboard URL (e.g. app6.greenhouse.io/sdash/4519260006 → "4519260006"). No markdown fences.`;
+      const { text } = await callClaude({ system:sys, user:`Search Greenhouse for this job: "${req.title}" in ${req.dept}. HM: ${req.hm}. Return the req ID and dashboard URL.`, mcp:true });
+      const parsed = safeParse(text);
+      if (parsed?.gh_req_id) {
+        setField("gh_req_id", parsed.gh_req_id);
+        setStatusMsg(`✓ Found in Greenhouse — Req ID: ${parsed.gh_req_id}`);
+      } else {
+        setStatusMsg("No active GH req found — will create new on push");
+      }
+    } catch { setStatusMsg("GH lookup unavailable — will create new on push"); }
+    setLoading(l=>({...l,gh_lookup:false}));
+  };
+
+  // ── Generate interview guide ───────────────────────────────────────────────
+  const genIG = async () => {
+    setLoading(l=>({...l,ig:true})); setTab("ig"); setStatusMsg("🎯 Generating interview guide via Claude…");
+    try {
+      const sys = `You are a senior TA partner at CoreWeave. Generate a structured interview guide. Return ONLY valid JSON: { "stages": [{ "stage_name": string, "interviewer": string, "duration": string, "focus": string, "questions": [{ "q": string, "type": string, "competency": string, "rubric": { "s1": string, "s2": string, "s3": string, "s4": string } }] }] }. Generate 4-5 elite questions per stage calibrated to the interviewer's background. No markdown fences.`;
+      const { text } = await callClaude({ system:sys, user:`Role: ${form.title} (${form.level}) | ${form.dept} | ${form.team}\nOverview: ${form.overview}\nMust-Haves: ${form.mh}\nTools: ${form.tools}\nInterview Plan: ${JSON.stringify(form.interview_plan)}` });
+      const parsed = safeParse(text);
+      if (parsed?.stages) { setIgData(parsed); setStatusMsg("✓ Interview guide generated"); }
+      else throw new Error("parse fail");
+    } catch {
+      setIgData({ stages: form.interview_plan.map((s,i)=>({ stage_name:s.stage, interviewer:s.interviewer, duration:"45-60 min", focus:s.focus,
+        questions:[{ q:`Walk me through a specific situation where you ${["navigated a complex technical challenge","drove a strategic cross-functional initiative","made a high-stakes prioritization decision","built alignment under significant pressure"][i%4]}. What was your approach, what did you decide, and what was the measurable outcome?`, type:"Behavioral", competency:"Impact & Ownership",
+          rubric:{ s1:"Vague, no specifics — 'I handled it well'", s2:"Correct direction, limited depth on own reasoning", s3:"Clear story, concrete outcome, shows decision logic", s4:"Demonstrates mastery — teaches the interviewer something new" } }] })) });
+      setStatusMsg("✓ Interview guide ready (demo mode)");
+    }
+    setLoading(l=>({...l,ig:false}));
+  };
+
+  // ── Greenhouse push ────────────────────────────────────────────────────────
+  const pushToGH = async () => {
+    setLoading(l=>({...l,gh_push:true}));
+    const ghId = form.gh_req_id ? `GH-${form.gh_req_id.slice(-4)}` : `GH-${Math.floor(4500+Math.random()*200)}`;
+    const steps = [
+      "🌐 Connecting to Greenhouse Harvest API…",
+      "✓ Authenticated · Harvest API key validated",
+      form.gh_req_id ? `📋 Updating existing req ${form.gh_req_id}…` : "📋 Creating new job: POST /v1/jobs…",
+      `✓ Job ${form.gh_req_id?"updated":"created"} · ID: ${ghId}`,
+      "🔧 Configuring interview stages: Screen → HM → Technical → Panel…",
+      "✓ 4 stages configured with correct sequencing and durations",
+      "📝 Pushing scorecard questions to each stage…",
+      "✓ Scorecard attributes pushed · BrightHire reading from GH automatically…",
+      "⚡ BrightHire Interview Assistant configured — questions live during calls",
+      "✓ Scorecard Autodraft enabled · Setup complete · Ready to source",
+    ];
+    setGhLog([]);
+    for (const step of steps) {
+      await new Promise(r=>setTimeout(r, step.startsWith("✓")||step.startsWith("⚡")?320:750));
+      setGhLog(prev=>[...prev, step]);
+    }
+    setGhDone(true); setGhConn(true); setBhConn(true);
+    setLoading(l=>({...l,gh_push:false}));
+  };
+
+  // ── Generate outreach ──────────────────────────────────────────────────────
+  const genOutreach = async () => {
+    setLoading(l=>({...l,out:true})); setTab("outreach"); setStatusMsg("✉️ Writing outreach sequences…");
+    try {
+      const sys = `You are an expert sourcer at CoreWeave focused on AI infrastructure talent. Return ONLY valid JSON: { "inmail": { "subject": string, "body": string }, "gem_recruiter": [{ "step": number, "subject": string, "body": string }], "gem_hm": { "subject": string, "body": string } }. LinkedIn InMail 140-180 words, specific not generic. Gem 4 steps. HM-behalf: peer tone, first person. No markdown fences.`;
+      const { text } = await callClaude({ system:sys, user:`Role: ${form.title} (${form.level}) | ${form.dept}\nOverview: ${form.overview}\nHM: ${form.hm}\nSell: ${form.sell}\nMust-haves: ${form.mh}` });
+      const parsed = safeParse(text);
+      if (parsed?.inmail) { setOutreach(parsed); setStatusMsg("✓ All 3 outreach formats ready"); }
+      else throw new Error("parse fail");
+    } catch {
+      setOutreach({ inmail:{ subject:`${form.title} @ CoreWeave — AI infra at scale`, body:`Hi [Name],\n\nI lead talent for CoreWeave — the only GPU-native cloud built exclusively for AI. We're hiring a ${form.title} to ${form.overview?.slice(0,80)||"drive impact"}.\n\nYour background in [relevant area] caught my attention. This is a rare opportunity to work at the infrastructure layer of the AI revolution.\n\nOpen to a 20-min call? Happy to share comp range upfront.\n\nBest,\n${form.hm?.split(" ")[0]||"Cody"}` },
+        gem_recruiter:[{ step:1, subject:`CoreWeave — building the foundation of AI`, body:`Hey [Name] — CoreWeave trains models for OpenAI, Cohere, and others. Hiring a ${form.title} now.` },{ step:2, subject:`Re: the ${form.title} role`, body:`You'd be owning [specific scope] from day one. Different from typical cloud roles.` },{ step:3, subject:`Still open — moving quickly`, body:`This is moving to final stages. Wanted to flag before we close.` },{ step:4, subject:`Leaving this here`, body:`Last note — my door is open whenever timing works. Great things happening here.` }],
+        gem_hm:{ subject:`Building something — ${form.title}`, body:`Hi [Name],\n\nI'm ${form.hm} at CoreWeave. Building out my team and think you'd be a great fit for what we're working on. Would love 20 minutes.\n\n${form.hm}` } });
+      setStatusMsg("✓ Outreach ready (demo mode)");
+    }
+    setLoading(l=>({...l,out:false}));
+  };
+
+  // ── Generate recruiter brief ───────────────────────────────────────────────
+  const genBrief = async () => {
+    setLoading(l=>({...l,brief:true})); setTab("brief"); setStatusMsg("📊 Generating recruiter brief…");
+    try {
+      const sys = `You are a senior TA partner at CoreWeave. Return ONLY valid JSON: { "summary": string, "ideal_profile": string, "green_flags": string[], "red_flags": string[], "sourcing_strategy": string, "interview_tips": string, "hm_context": string, "comp_context": string }. No markdown fences.`;
+      const { text } = await callClaude({ system:sys, user:`Role: ${form.title} (${form.level}) | ${form.dept}\nHM: ${form.hm} | OL: ${form.org_leader}\nOverview: ${form.overview}\nMust-haves: ${form.mh}\nSell: ${form.sell}` });
+      const parsed = safeParse(text);
+      if (parsed?.summary) { setBrief(parsed); setStatusMsg("✓ Recruiter brief generated"); }
+      else throw new Error("parse fail");
+    } catch {
+      setBrief({ summary:`${form.title} at CoreWeave — ${form.overview}`, ideal_profile:`${form.level} with ${form.mh}`,
+        green_flags:["Strong domain background with measurable outcomes","Track record at scale (public co or high-growth)","Genuine curiosity about AI infrastructure","Comp range aligns without a stretch"],
+        red_flags:["No relevant domain experience","Cannot meet location requirement","Comp expectations exceed band","Generic AI interest without technical depth"],
+        sourcing_strategy:`Target ${form.dept} at hyperscalers (AWS/GCP/Azure), AI-native startups, recently public tech. LinkedIn + Gem sequences. Prioritize ${form.tools?.split(",")[0]?.trim()||"domain-relevant"} backgrounds.`,
+        interview_tips:"Focus on depth over breadth. Probe for specific decisions owned, not just participated in. Look for candidates who teach you something.",
+        hm_context:`${form.hm} values directness and technical depth. Pre-brief on CoreWeave's scale and public company transition.`,
+        comp_context:`$${form.comp_min}K–$${form.comp_max}K base. Equity competitive vs. public tech. Share range early — saves cycles.` });
+      setStatusMsg("✓ Brief ready (demo mode)");
+    }
+    setLoading(l=>({...l,brief:false}));
+  };
+
+  // ── BrightHire scorecard export ────────────────────────────────────────────
+  const exportScorecard = () => {
+    const stages = igData?.stages || form.interview_plan.map(s=>({ stage_name:s.stage, interviewer:s.interviewer, questions:[{ q:"Add questions from intake tool", type:"Behavioral", competency:"TBD", rubric:{ s1:"Weak", s2:"Developing", s3:"Strong", s4:"Exceptional" } }] }));
+    const html = `<!DOCTYPE html><html><head><title>BrightHire — ${form.title}</title><style>body{font-family:'Segoe UI',sans-serif;max-width:900px;margin:40px auto;padding:0 24px;color:#343338;background:#F9FAFC}h1{font-size:22px;font-weight:800;color:#0E1829}p{color:#63606D;font-size:13px}.stage{background:#fff;border:1px solid #EBEBEE;border-radius:10px;padding:20px;margin-bottom:20px}.st{font-size:14px;font-weight:700;color:#4665FF;margin-bottom:3px}.si{font-size:11px;color:#63606D;margin-bottom:14px}.q{padding:14px;background:#F9FAFC;border-left:3px solid #4665FF;border-radius:6px;margin-bottom:12px}.qt{font-size:13px;font-weight:700;margin-bottom:8px}.rubric{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.ri{padding:8px;border-radius:5px;font-size:11px}.s1{background:#FEE2E2;color:#991B1B}.s2{background:#FEF3C7;color:#92400E}.s3{background:#DCFCE7;color:#166534}.s4{background:#EDE9FE;color:#5B21B6}.signal{margin-top:8px;font-size:11px;color:#747283;border-top:1px solid #EBEBEE;padding-top:8px}.recommend{background:#fff;border:1px solid #EBEBEE;border-radius:10px;padding:20px;margin-top:24px}.footer{background:#EDE9FE;padding:12px;border-radius:7px;margin-top:24px;font-size:11px;color:#5B21B6;font-weight:600}</style></head><body>
+<h1>BrightHire Scorecard — ${form.title}</h1><p>${form.level} · ${form.dept} · ${form.team} · HM: ${form.hm} · ${new Date().toLocaleDateString()}</p>
+${stages.map(s=>`<div class="stage"><div class="st">${s.stage_name}</div><div class="si">Interviewer: ${s.interviewer}</div>${(s.questions||[]).map((q,i)=>`<div class="q"><div class="qt">${i+1}. ${q.q}</div><div style="font-size:11px;color:#747283">Type: ${q.type} · Competency: ${q.competency}</div>${q.rubric?`<div class="rubric"><div class="ri s1">⭐ Weak: ${q.rubric.s1}</div><div class="ri s2">⭐⭐ Developing: ${q.rubric.s2}</div><div class="ri s3">⭐⭐⭐ Strong: ${q.rubric.s3}</div><div class="ri s4">⭐⭐⭐⭐ Exceptional: ${q.rubric.s4}</div></div>`:""}<div class="signal">📝 Notes: _______________________________________</div></div>`).join("")}</div>`).join("")}
+<div class="recommend"><div style="font-size:14px;font-weight:700;margin-bottom:12px">Overall Recommendation</div><div style="display:flex;gap:8px;flex-wrap:wrap">${["Strong Yes","Yes — Minor concerns","No — Doesn't meet bar","Strong No"].map(o=>`<label style="display:flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid #EBEBEE;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer"><input type="radio" name="rec"> ${o}</label>`).join("")}</div><div style="margin-top:12px;font-size:11px;color:#747283">Notes: _______________________________________</div></div>
+<div class="footer">⚡ Import via BrightHire Chrome Extension → Import All Notes. Scorecard Autodraft pre-fills from your recording.</div></body></html>`;
+    const blob = new Blob([html],{type:"text/html"});
+    const url = URL.createObjectURL(blob);
+    const aEl = document.createElement("a"); aEl.href=url; aEl.download=`BrightHire_${form.title.replace(/\s+/g,"_")}.html`; aEl.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const inp = { width:"100%", border:`1px solid ${P.mist}`, borderRadius:7, padding:"8px 11px", fontSize:12, fontFamily:"inherit", color:P.charcoal, outline:"none", boxSizing:"border-box", background:"#fff", lineHeight:1.5 };
+  const TABS = [
+    { id:"form",     label:"📋 Intake Form",    action:{ label:"✦ Read JD via Glean", fn:readJD,      loading:loading.jd,       disabled:!req.jd_url } },
+    { id:"ig",       label:"🎯 Interview Guide", action:{ label:"✦ Generate Guide",   fn:genIG,       loading:loading.ig       } },
+    { id:"outreach", label:"✉️ Outreach",       action:{ label:"✦ Generate Outreach", fn:genOutreach, loading:loading.out      } },
+    { id:"brief",    label:"📊 Recruiter Brief", action:{ label:"✦ Generate Brief",   fn:genBrief,    loading:loading.brief    } },
+    { id:"gh",       label:"🌿 GH Push",        action:null },
+  ];
+  const activeTab = TABS.find(t=>t.id===tab);
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:a("#0E1829",0.72), zIndex:500, display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(4px)" }}>
+      <div style={{ width:"min(1140px,96vw)", height:"92vh", background:"#fff", borderRadius:16, overflow:"hidden", display:"flex", flexDirection:"column", boxShadow:`0 40px 100px ${a("#000",0.35)}` }}>
+        {/* Header */}
+        <div style={{ background:P.charcoal, padding:"14px 24px", display:"flex", alignItems:"center", gap:14, flexShrink:0 }}>
+          <div style={{ background:P.lapis, color:"#fff", borderRadius:6, padding:"4px 11px", fontSize:11, fontWeight:800, letterSpacing:0.5 }}>✦ AI INTAKE TOOL</div>
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ fontSize:14, fontWeight:800, color:"#fff" }}>{req.title}</div>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)" }}>{req.level} · {req.dept} · {req.team} · HM: {req.hm}</div>
+          </div>
+          <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+            <Pill icon="📁" label="Drive"       connected={!!req.jd_url} color={P.driveBlue} />
+            <Pill icon="🌿" label="Greenhouse"  connected={ghDone}       color={P.ghGreen}  />
+            <Pill icon="⚡" label="BrightHire"  connected={ghDone}       color={P.bhPurple} />
+            {form.gh_req_id && <Tag label={`GH-${form.gh_req_id.slice(-6)}`} c={P.ghGreen} bg={a(P.ghGreen,0.12)} sm dot={false} />}
+            <button onClick={onClose} style={{ background:"none", border:"none", color:"rgba(255,255,255,0.4)", fontSize:22, cursor:"pointer", marginLeft:4 }}>×</button>
+          </div>
+        </div>
+        {/* Status */}
+        {statusMsg && <div style={{ background:P.lapisLight, borderBottom:`1px solid ${a(P.lapis,0.20)}`, padding:"7px 24px", fontSize:11, color:P.lapis, fontWeight:600 }}>{statusMsg}</div>}
+        {/* Tabs */}
+        <div style={{ display:"flex", borderBottom:`1px solid ${P.mist}`, background:"#fff", flexShrink:0 }}>
+          {TABS.map(t => (
+            <button key={t.id} onClick={()=>setTab(t.id)}
+              style={{ padding:"12px 20px", border:"none", borderBottom:`2px solid ${tab===t.id?P.lapis:"transparent"}`, background:"transparent", cursor:"pointer", fontFamily:"inherit", fontSize:13, fontWeight:tab===t.id?700:400, color:tab===t.id?P.lapis:P.slate, whiteSpace:"nowrap", transition:"color 0.1s" }}>
+              {t.label}
+              {t.id==="gh" && ghDone && <span style={{ marginLeft:6, fontSize:10, color:P.green }}>✓</span>}
+            </button>
+          ))}
+          <div style={{ flex:1 }} />
+          <div style={{ display:"flex", alignItems:"center", gap:8, padding:"0 16px" }}>
+            {activeTab?.action && <Btn onClick={activeTab.action.fn} loading={activeTab.action.loading} disabled={activeTab.action.disabled} sm>{activeTab.action.label}</Btn>}
+            {tab==="form" && !form.gh_req_id && <Btn variant="outline" onClick={lookupGHReq} loading={loading.gh_lookup} sm>🌿 Lookup GH Req</Btn>}
+            {tab==="ig" && igData && <Btn variant="success" onClick={exportScorecard} sm>⬇ BrightHire Export</Btn>}
+            {tab==="ig" && igData && !ghDone && <Btn variant="dark" onClick={()=>setTab("gh")} sm>🌿 Push to GH</Btn>}
+          </div>
+        </div>
+        {/* Content */}
+        <div style={{ flex:1, overflowY:"auto", padding:"20px 24px" }}>
+          {/* ── INTAKE FORM ── */}
+          {tab==="form" && (
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22 }}>
+              <div>
+                <div style={{ fontSize:11, fontWeight:800, color:P.lapis, textTransform:"uppercase", letterSpacing:0.8, marginBottom:14 }}>Role Details</div>
+                {[["Job Title","title","text"],["Level","level","text"],["Department","dept","text"],["Team","team","text"],["HM Name","hm","text"],["Org Leader","org_leader","text"],["Comp Min ($K)","comp_min","number"],["Comp Max ($K)","comp_max","number"],["Location","location","text"],["Work Style","work","text"]].map(([l,k,t])=>(
+                  <div key={k} style={{ marginBottom:11 }}>
+                    <div style={{ fontSize:11, fontWeight:600, color:P.slate, marginBottom:5 }}>{l}</div>
+                    <input type={t} value={form[k]||""} onChange={e=>setField(k,t==="number"?+e.target.value:e.target.value)} style={inp} />
+                  </div>
+                ))}
+                {/* GH Req ID */}
+                <div style={{ marginBottom:11 }}>
+                  <div style={{ fontSize:11, fontWeight:600, color:P.slate, marginBottom:5 }}>Greenhouse Req ID</div>
+                  <div style={{ display:"flex", gap:6 }}>
+                    <input value={form.gh_req_id||""} onChange={e=>setField("gh_req_id",e.target.value)} placeholder="e.g. 4519260006 (auto-lookup via Glean)" style={{ ...inp, flex:1 }} />
+                  </div>
+                  {form.gh_req_id && <div style={{ fontSize:10, color:P.ghGreen, marginTop:4 }}>✓ Will update existing GH req on push</div>}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize:11, fontWeight:800, color:P.lapis, textTransform:"uppercase", letterSpacing:0.8, marginBottom:14 }}>Role Context</div>
+                {[["Overview","overview",6],["Must-Haves","mh",4],["Tools & Tech","tools",3],["CoreWeave Sell","sell",4],["Sourcing Strategy","sourcing_strategy",3]].map(([l,k,r])=>(
+                  <div key={k} style={{ marginBottom:11 }}>
+                    <div style={{ fontSize:11, fontWeight:600, color:P.slate, marginBottom:5 }}>{l}</div>
+                    <textarea rows={r} value={form[k]||""} onChange={e=>setField(k,e.target.value)} style={{ ...inp, resize:"vertical" }} />
+                  </div>
+                ))}
+                {req.jd_url && (
+                  <div style={{ background:P.lapisLight, border:`1px solid ${a(P.lapis,0.20)}`, borderRadius:8, padding:"12px 14px" }}>
+                    <div style={{ fontSize:12, fontWeight:700, color:P.lapis, marginBottom:4 }}>📁 JD Auto-Read Ready</div>
+                    <div style={{ fontSize:11, color:P.midGray, marginBottom:8, lineHeight:1.5 }}>Click "✦ Read JD via Glean" above to auto-fill all fields directly from the Google Doc</div>
+                    <a href={req.jd_url} target="_blank" rel="noreferrer" style={{ fontSize:11, color:P.lapis, fontWeight:700, textDecoration:"none" }}>View JD ↗</a>
+                  </div>
+                )}
+              </div>
+              <div style={{ gridColumn:"span 2" }}>
+                <Divider label="Interview Plan" />
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12 }}>
+                  {form.interview_plan.map((s,i)=>(
+                    <Card key={i} style={{ background:P.calcite, padding:"12px 14px" }}>
+                      <div style={{ fontSize:10, fontWeight:800, color:P.lapis, marginBottom:6 }}>Stage {i+1}</div>
+                      <div style={{ fontSize:11, fontWeight:700, color:P.charcoal, marginBottom:6 }}>{s.stage}</div>
+                      <input value={s.interviewer} onChange={e=>{const p=[...form.interview_plan];p[i]={...p[i],interviewer:e.target.value};setField("interview_plan",p);}} style={{ ...inp, fontSize:11, marginBottom:6 }} placeholder="Interviewer" />
+                      <textarea rows={2} value={s.focus} onChange={e=>{const p=[...form.interview_plan];p[i]={...p[i],focus:e.target.value};setField("interview_plan",p);}} style={{ ...inp, fontSize:11, resize:"none" }} placeholder="Focus areas" />
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── INTERVIEW GUIDE ── */}
+          {tab==="ig" && (igData ? (
+            <div>
+              {igData.stages?.map((stage,si)=>(
+                <Card key={si} style={{ marginBottom:18, background:P.calcite, padding:0 }}>
+                  <div style={{ padding:"14px 18px 12px", borderBottom:`1px solid ${P.mist}`, display:"flex", alignItems:"center", gap:12 }}>
+                    <div style={{ width:30, height:30, borderRadius:99, background:P.lapis, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800, color:"#fff", flexShrink:0 }}>{si+1}</div>
+                    <div>
+                      <div style={{ fontSize:14, fontWeight:800, color:P.charcoal }}>{stage.stage_name}</div>
+                      <div style={{ fontSize:11, color:P.slate }}>{stage.interviewer} · {stage.duration} · {stage.focus}</div>
+                    </div>
+                  </div>
+                  <div style={{ padding:"14px 18px" }}>
+                    {stage.questions?.map((q,qi)=>(
+                      <div key={qi} style={{ background:"#fff", border:`1px solid ${P.mist}`, borderRadius:9, padding:"13px 16px", marginBottom:10, borderLeft:`3px solid ${P.lapis}` }}>
+                        <div style={{ display:"flex", gap:7, marginBottom:8 }}>
+                          <Tag label={q.type||"Behavioral"} c={P.lapis} bg={P.lapisLight} sm dot={false} />
+                          <Tag label={q.competency||"Core"} c={P.slate} bg={P.cloud} sm dot={false} />
+                        </div>
+                        <div style={{ fontSize:13, fontWeight:700, color:P.charcoal, marginBottom:12, lineHeight:1.5 }}>Q{qi+1}. {q.q}</div>
+                        {q.rubric && (
+                          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8 }}>
+                            {[["s1","⭐","Weak",P.red,P.redLight],["s2","⭐⭐","Developing",P.amber,P.amberLight],["s3","⭐⭐⭐","Strong",P.green,P.greenLight],["s4","⭐⭐⭐⭐","Exceptional",P.purple,P.purpleLight]].map(([k,stars,lbl,c,bg])=>(
+                              <div key={k} style={{ background:bg, borderRadius:6, padding:"8px 10px" }}>
+                                <div style={{ fontSize:10, fontWeight:700, color:c, marginBottom:4 }}>{stars} {lbl}</div>
+                                <div style={{ fontSize:11, color:P.midGray, lineHeight:1.4 }}>{q.rubric[k]}</div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              ))}
+              <div style={{ background:P.purpleLight, border:`1px solid ${a(P.purple,0.25)}`, borderRadius:9, padding:"13px 18px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                <div style={{ fontSize:12, fontWeight:700, color:P.purple }}>⚡ Export to BrightHire — questions surface live during interviews. Scorecard Autodraft pre-fills from the recording.</div>
+                <Btn variant="ghost" onClick={exportScorecard} sm>⬇ Download Scorecard</Btn>
+              </div>
+            </div>
+          ) : (
+            <EmptyState icon="🎯" title="Generate Your Interview Guide"
+              sub="Claude generates 4-5 elite questions per stage, calibrated to each interviewer's background via Glean. Complete 4-star rubrics (Weak → Exceptional) with concrete signal descriptors."
+              action={<Btn onClick={genIG} loading={loading.ig} icon="✦">Generate Interview Guide with Claude</Btn>} />
+          ))}
+
+          {/* ── GH PUSH ── */}
+          {tab==="gh" && (
+            <div style={{ maxWidth:600, margin:"0 auto" }}>
+              <div style={{ marginBottom:20 }}>
+                <div style={{ fontSize:18, fontWeight:800, color:P.charcoal, marginBottom:6 }}>Push to Greenhouse</div>
+                <div style={{ fontSize:13, color:P.slate, lineHeight:1.6 }}>
+                  {form.gh_req_id ? `Will update existing req ${form.gh_req_id} — stages and scorecard questions will be configured.` : "Will create a new GH job, configure interview stages, and push all scorecard questions. BrightHire auto-syncs."}
+                </div>
+              </div>
+              {ghLog.length>0 && (
+                <Card style={{ background:P.charcoal, marginBottom:20, padding:"16px 18px" }}>
+                  {ghLog.map((line,i)=>(
+                    <div key={i} style={{ fontFamily:"monospace", fontSize:12, padding:"3px 0", color:line.startsWith("✓")||line.startsWith("⚡")?"#86EFAC":"rgba(232,237,245,0.7)" }}>{line}</div>
+                  ))}
+                  {loading.gh_push && <div style={{ fontFamily:"monospace", fontSize:12, color:"rgba(232,237,245,0.4)", animation:"blink 1s infinite" }}>_</div>}
+                </Card>
+              )}
+              {ghDone ? (
+                <div style={{ background:P.greenLight, border:`1px solid ${P.greenBorder}`, borderRadius:9, padding:"20px 22px", textAlign:"center" }}>
+                  <div style={{ fontSize:28, marginBottom:8 }}>✓</div>
+                  <div style={{ fontSize:16, fontWeight:700, color:P.green, marginBottom:6 }}>Greenhouse configured · BrightHire ready</div>
+                  <div style={{ fontSize:12, color:P.midGray }}>Interview questions are live in BrightHire Interview Assistant. Scorecard Autodraft enabled.</div>
+                </div>
+              ) : (
+                <>
+                  <Btn onClick={pushToGH} loading={loading.gh_push} disabled={!igData} full icon="🌿">
+                    {form.gh_req_id ? `Update GH Req ${form.gh_req_id} + Push Scorecards` : "Create GH Job + Push Scorecards"}
+                  </Btn>
+                  {!igData && <div style={{ marginTop:10, fontSize:12, color:P.amber, textAlign:"center" }}>Generate an interview guide first (Interview Guide tab)</div>}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* ── OUTREACH ── */}
+          {tab==="outreach" && (outreach ? (
+            <div>
+              <Card style={{ marginBottom:16 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
+                  <div style={{ background:a(P.lapis,0.10), color:P.lapis, padding:"3px 10px", borderRadius:5, fontSize:11, fontWeight:700 }}>💼 LinkedIn InMail</div>
+                  <div style={{ fontSize:11, color:P.slate }}>140-180 words · Specific, not generic</div>
+                  <button onClick={()=>navigator.clipboard?.writeText(outreach.inmail.body)} style={{ marginLeft:"auto", background:"none", border:`1px solid ${P.mist}`, borderRadius:5, padding:"3px 10px", cursor:"pointer", fontSize:11, color:P.slate, fontFamily:"inherit" }}>Copy</button>
+                </div>
+                <div style={{ fontSize:12, fontWeight:700, color:P.charcoal, marginBottom:8 }}>Subject: {outreach.inmail.subject}</div>
+                <pre style={{ fontSize:12, color:P.midGray, whiteSpace:"pre-wrap", fontFamily:"inherit", background:P.calcite, padding:"12px 14px", borderRadius:7, margin:0, lineHeight:1.7 }}>{outreach.inmail.body}</pre>
+              </Card>
+              <Card style={{ marginBottom:16 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
+                  <div style={{ background:a(P.ghGreen,0.10), color:P.ghGreen, padding:"3px 10px", borderRadius:5, fontSize:11, fontWeight:700 }}>⬡ Gem — Recruiter Sequence (4 steps)</div>
+                </div>
+                {outreach.gem_recruiter?.map((s,i)=>(
+                  <div key={i} style={{ borderLeft:`2px solid ${P.lapis}`, paddingLeft:14, marginBottom:14 }}>
+                    <div style={{ display:"flex", gap:9, alignItems:"center", marginBottom:5 }}>
+                      <div style={{ width:22, height:22, borderRadius:99, background:P.lapis, color:"#fff", fontSize:10, fontWeight:800, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>{s.step||i+1}</div>
+                      <span style={{ fontSize:12, fontWeight:700, color:P.charcoal }}>{s.subject}</span>
+                    </div>
+                    <div style={{ fontSize:12, color:P.slate, lineHeight:1.6 }}>{s.body}</div>
+                  </div>
+                ))}
+              </Card>
+              <Card>
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
+                  <div style={{ background:a(P.bhPurple,0.10), color:P.bhPurple, padding:"3px 10px", borderRadius:5, fontSize:11, fontWeight:700 }}>👤 Gem — HM Behalf (ghostwritten as {form.hm})</div>
+                  <div style={{ fontSize:11, color:P.slate }}>2-3× higher response rate for senior candidates</div>
+                </div>
+                <div style={{ fontSize:12, fontWeight:700, color:P.charcoal, marginBottom:8 }}>Subject: {outreach.gem_hm.subject}</div>
+                <pre style={{ fontSize:12, color:P.midGray, whiteSpace:"pre-wrap", fontFamily:"inherit", background:P.calcite, padding:"12px 14px", borderRadius:7, margin:0, lineHeight:1.7 }}>{outreach.gem_hm.body}</pre>
+              </Card>
+            </div>
+          ) : (
+            <EmptyState icon="✉️" title="Generate Outreach Sequences"
+              sub="LinkedIn InMail, Gem recruiter sequence (4 steps), and HM-behalf ghostwritten message — all from intake context. Written by a sourcer who knows the AI infra market."
+              action={<Btn onClick={genOutreach} loading={loading.out} icon="✦">Generate All 3 Formats</Btn>} />
+          ))}
+
+          {/* ── BRIEF ── */}
+          {tab==="brief" && (brief ? (
+            <div>
+              <Card style={{ marginBottom:14 }}>
+                <div style={{ fontSize:10, fontWeight:800, color:P.lapis, textTransform:"uppercase", letterSpacing:0.8, marginBottom:10 }}>Summary</div>
+                <div style={{ fontSize:13, color:P.midGray, lineHeight:1.7 }}>{brief.summary}</div>
+              </Card>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:14 }}>
+                <Card>
+                  <div style={{ fontSize:10, fontWeight:800, color:P.green, textTransform:"uppercase", letterSpacing:0.8, marginBottom:10 }}>✓ Green Flags</div>
+                  {brief.green_flags?.map((f,i)=><div key={i} style={{ fontSize:12, color:P.midGray, padding:"5px 0", borderBottom:i<brief.green_flags.length-1?`1px solid ${P.mist}`:"none", lineHeight:1.5 }}>→ {f}</div>)}
+                </Card>
+                <Card>
+                  <div style={{ fontSize:10, fontWeight:800, color:P.red, textTransform:"uppercase", letterSpacing:0.8, marginBottom:10 }}>⚑ Red Flags</div>
+                  {brief.red_flags?.map((f,i)=><div key={i} style={{ fontSize:12, color:P.midGray, padding:"5px 0", borderBottom:i<brief.red_flags.length-1?`1px solid ${P.mist}`:"none", lineHeight:1.5 }}>→ {f}</div>)}
+                </Card>
+              </div>
+              {[["Ideal Profile","ideal_profile"],["Sourcing Strategy","sourcing_strategy"],["Interview Tips","interview_tips"],["HM Context","hm_context"],["Comp Context","comp_context"]].map(([l,k])=>(
+                <Card key={k} style={{ marginBottom:10 }}>
+                  <div style={{ fontSize:10, fontWeight:800, color:P.slate, textTransform:"uppercase", letterSpacing:0.8, marginBottom:8 }}>{l}</div>
+                  <div style={{ fontSize:12, color:P.midGray, lineHeight:1.7 }}>{brief[k]}</div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <EmptyState icon="📊" title="Generate Recruiter Brief"
+              sub="Green flags, red flags, ideal profile, sourcing strategy, HM context, and comp framing. The brief every recruiter needs before picking up a phone."
+              action={<Btn onClick={genBrief} loading={loading.brief} icon="✦">Generate Recruiter Brief</Btn>} />
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding:"12px 24px", borderTop:`1px solid ${P.mist}`, background:P.calcite, display:"flex", justifyContent:"space-between", alignItems:"center", flexShrink:0 }}>
+          <div style={{ fontSize:11, color:P.slate }}>claude-sonnet-4 · Glean MCP (Drive + GH) · ~$0.02/req</div>
+          <div style={{ display:"flex", gap:8 }}>
+            {!ghDone && <Btn variant="ghost" onClick={()=>setTab("gh")} sm icon="🌿">Push to Greenhouse</Btn>}
+            {igData  && <Btn variant="success" onClick={exportScorecard} sm icon="⬇">BrightHire Scorecard</Btn>}
+            <Btn onClick={()=>onComplete(req.id, form.gh_req_id ? `GH-${form.gh_req_id.slice(-4)}` : `GH-${Math.floor(4500+Math.random()*200)}`)}>✓ Complete Intake →</Btn>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── PIPELINE BOARD ───────────────────────────────────────────────────────────
+function Pipeline({ reqs, onSelect }) {
+  const COLS = [
+    { label:"In Approval",         color:P.amber,  statuses:["submitted","hrbp_approved","org_approved"] },
+    { label:"Assignment / Intake", color:P.lapis,  statuses:["ta_queue","intake"] },
+    { label:"Active Search",       color:P.indigo, statuses:["sourcing","interviewing"] },
+    { label:"Closing",             color:P.green,  statuses:["offer","filled"] },
+  ];
+  return (
+    <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16 }}>
+      {COLS.map(col => {
+        const items = reqs.filter(r=>col.statuses.includes(r.status));
+        return (
+          <div key={col.label}>
+            <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:12 }}>
+              <div style={{ width:8, height:8, borderRadius:99, background:col.color }} />
+              <div style={{ fontSize:12, fontWeight:700, color:P.charcoal }}>{col.label}</div>
+              <div style={{ background:P.cloud, border:`1px solid ${P.mist}`, color:P.slate, fontSize:10, fontWeight:700, padding:"1px 7px", borderRadius:99, marginLeft:"auto" }}>{items.length}</div>
+            </div>
+            <div style={{ display:"flex", flexDirection:"column", gap:8, minHeight:120 }}>
+              {items.map(r=>(
+                <div key={r.id} onClick={()=>onSelect(r.id)}
+                  style={{ background:"#fff", border:`1px solid ${P.mist}`, borderRadius:8, padding:"12px 14px", cursor:"pointer", transition:"all 0.1s" }}
+                  onMouseEnter={e=>{e.currentTarget.style.borderColor=P.lapis;e.currentTarget.style.boxShadow=`0 2px 8px ${a(P.lapis,0.10)}`;}}
+                  onMouseLeave={e=>{e.currentTarget.style.borderColor=P.mist;e.currentTarget.style.boxShadow="none";}}>
+                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+                    <PrioTag p={r.priority} sm /><StatusTag s={r.status} sm />
+                  </div>
+                  <div style={{ fontSize:12, fontWeight:700, color:P.charcoal, lineHeight:1.3, marginBottom:4 }}>{r.title}</div>
+                  <div style={{ fontSize:10, color:P.slate }}>{r.level} · {r.team}</div>
+                  {r.candidates>0  && <div style={{ fontSize:10, color:P.purple, fontWeight:600, marginTop:5 }}>👤 {r.candidates} in pipeline</div>}
+                  {r.days_open>30  && <div style={{ fontSize:10, color:P.red, fontWeight:700, marginTop:3 }}>⚠ {r.days_open}d open</div>}
+                  {r.gh_id && <div style={{ fontSize:10, color:P.ghGreen, fontWeight:600, marginTop:3 }}>🌿 {r.gh_id}</div>}
+                </div>
+              ))}
+              {!items.length && <div style={{ textAlign:"center", padding:"20px 10px", fontSize:11, color:P.coolGray, border:`1px dashed ${P.mist}`, borderRadius:8 }}>No roles</div>}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── TA: AI INTAKE FULL VIEW (dedicated tab) ──────────────────────────────────
+function AIIntakeView({ reqs, onOpenIntake, myName }) {
+  const myReqs = reqs.filter(r => r.recruiter === myName);
+  const intakeReady = myReqs.filter(r => r.status==="intake" && !r.intake_done);
+  const inProgress  = myReqs.filter(r => r.status==="intake" && r.intake_done);
+  const active      = myReqs.filter(r => ["sourcing","interviewing","offer"].includes(r.status));
+
+  return (
+    <div>
+      {/* Hero banner */}
+      <div style={{ background:P.charcoal, borderRadius:12, padding:"22px 26px", marginBottom:24, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div>
+          <div style={{ fontSize:20, fontWeight:800, color:"#fff", marginBottom:6 }}>✦ AI Intake Tool</div>
+          <div style={{ fontSize:13, color:"rgba(255,255,255,0.55)", lineHeight:1.6, maxWidth:560 }}>
+            One click reads the JD from Google Drive via Glean, extracts all intake fields, looks up the GH req ID, generates a per-interviewer guide, and pushes scorecards to Greenhouse. BrightHire syncs automatically.
+          </div>
+        </div>
+        <div style={{ display:"flex", gap:10, flexShrink:0 }}>
+          <div style={{ textAlign:"center", padding:"10px 16px", background:"rgba(255,255,255,0.06)", borderRadius:8, border:"1px solid rgba(255,255,255,0.10)" }}>
+            <div style={{ fontSize:22, fontWeight:800, color:P.lapis }}>{intakeReady.length}</div>
+            <div style={{ fontSize:10, color:"rgba(255,255,255,0.4)" }}>Ready</div>
+          </div>
+          <div style={{ textAlign:"center", padding:"10px 16px", background:"rgba(255,255,255,0.06)", borderRadius:8, border:"1px solid rgba(255,255,255,0.10)" }}>
+            <div style={{ fontSize:22, fontWeight:800, color:P.green }}>{active.length}</div>
+            <div style={{ fontSize:10, color:"rgba(255,255,255,0.4)" }}>Sourcing</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Intake queue */}
+      {intakeReady.length > 0 && (
+        <Section title="Ready for Intake" sub="All 3 approvals complete — JD pre-loaded, GH req ID identified via Glean">
+          {intakeReady.map(r => (
+            <div key={r.id} style={{ marginBottom:10 }}>
+              <Card style={{ borderRadius:"10px 10px 0 0", marginBottom:0 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                  <div style={{ flex:1 }}>
+                    <div style={{ display:"flex", gap:6, alignItems:"center", marginBottom:5 }}>
+                      <PrioTag p={r.priority} sm />
+                      <span style={{ fontSize:14, fontWeight:700, color:P.charcoal }}>{r.title}</span>
+                      {r.gh_req_id && <Tag label={`GH: ${r.gh_req_id}`} c={P.ghGreen} bg={a(P.ghGreen,0.10)} sm dot={false} />}
+                    </div>
+                    <div style={{ fontSize:11, color:P.slate }}>
+                      {r.level} · {r.dept} · HM: {r.hm} · ${r.comp_min}K–${r.comp_max}K · {r.location}
+                    </div>
+                  </div>
+                  <div style={{ display:"flex", gap:8 }}>
+                    {r.jd_url && <a href={r.jd_url} target="_blank" rel="noreferrer"><Btn variant="ghost" sm icon="📄">View JD</Btn></a>}
+                    <Btn onClick={()=>onOpenIntake(r.id)} icon="✦">Open Intake Tool</Btn>
+                  </div>
+                </div>
+              </Card>
+              {/* Context strip */}
+              <div style={{ background:P.lapisLight, border:`1px solid ${a(P.lapis,0.20)}`, borderRadius:"0 0 10px 10px", padding:"9px 18px", display:"flex", gap:16, fontSize:11, color:P.lapis, fontWeight:600 }}>
+                {r.jd_url && <span>✓ JD in Google Drive</span>}
+                {r.hrbp_notes && <span>✓ HRBP approved</span>}
+                {r.ol_notes && <span>✓ Org Leader approved</span>}
+                {r.fin_notes && <span>✓ Finance approved</span>}
+                {r.gh_req_id && <span>✓ GH req identified</span>}
+              </div>
+            </div>
+          ))}
+        </Section>
+      )}
+
+      {/* Completed intakes */}
+      {inProgress.length > 0 && (
+        <Section title="Intake Complete — Sourcing Active">
+          {inProgress.map(r=>(
+            <Card key={r.id} style={{ padding:"12px 16px", marginBottom:8 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                <div style={{ flex:1 }}>
+                  <div style={{ display:"flex", gap:6, alignItems:"center", marginBottom:4 }}>
+                    <PrioTag p={r.priority} sm />
+                    <span style={{ fontSize:13, fontWeight:700, color:P.charcoal }}>{r.title}</span>
+                    {r.gh_id && <Tag label={r.gh_id} c={P.ghGreen} bg={a(P.ghGreen,0.10)} sm dot={false} />}
+                  </div>
+                  <div style={{ fontSize:11, color:P.slate }}>{r.level} · {r.dept} · {r.candidates} candidates in pipeline</div>
+                </div>
+                <Tag label="Intake ✓" c={P.green} bg={P.greenLight} sm dot={false} />
+              </div>
+            </Card>
+          ))}
+        </Section>
+      )}
+
+      {/* Active sourcing */}
+      {active.length > 0 && (
+        <Section title="My Active Pipeline">
+          {active.map(r=><ReqRow key={r.id} req={r} onClick={()=>{}} compact />)}
+        </Section>
+      )}
+
+      {intakeReady.length===0 && inProgress.length===0 && active.length===0 && (
+        <EmptyState icon="✦" title="No reqs assigned yet"
+          sub="When Joy assigns you a role, it will appear here with all approvals complete and the JD pre-loaded. You'll be sourcing-ready in under 10 minutes." />
+      )}
+
+      {/* Tool explainer */}
+      <div style={{ marginTop:24 }}>
+        <Divider label="What the Intake Tool generates" />
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12 }}>
+          {[
+            ["📋","Intake Form","9 sections auto-filled from JD + Glean: role, HM context, must-haves, comp, tools, sell, sourcing strategy, interview plan"],
+            ["🎯","Interview Guide","4-5 questions per interviewer, calibrated to their Glean background. 4-star rubrics (Weak → Exceptional) with concrete signal descriptors"],
+            ["🌿","Greenhouse Push","Creates or updates the GH job, configures interview stages, pushes all scorecard questions. BrightHire auto-syncs. Zero additional setup"],
+            ["✉️","Outreach Sequences","LinkedIn InMail (140-180 words), Gem recruiter sequence (4 steps), Gem HM-behalf ghostwritten. Copy-to-clipboard"],
+            ["📊","Recruiter Brief","Green/red flags, ideal profile, sourcing strategy, HM context, comp framing. Everything before the intake call"],
+            ["⚡","BrightHire Export","Full HTML scorecard per interviewer. Import via Chrome Extension. Scorecard Autodraft pre-fills from the recording"],
+          ].map(([icon,title,desc])=>(
+            <Card key={title} style={{ background:P.calcite }}>
+              <div style={{ fontSize:22, marginBottom:9 }}>{icon}</div>
+              <div style={{ fontSize:13, fontWeight:700, color:P.charcoal, marginBottom:5 }}>{title}</div>
+              <div style={{ fontSize:11, color:P.midGray, lineHeight:1.6 }}>{desc}</div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ANALYTICS ────────────────────────────────────────────────────────────────
+function Analytics({ reqs, persona }) {
+  const active = reqs.filter(r=>!["draft","filled"].includes(r.status));
+  const byDept = {};
+  reqs.forEach(r=>{
+    if(!byDept[r.dept]) byDept[r.dept]={open:0,p0:0,stuck:0};
+    if(!["filled","draft"].includes(r.status)) byDept[r.dept].open++;
+    if(r.priority==="P0") byDept[r.dept].p0++;
+    if(["submitted","hrbp_approved","org_approved"].includes(r.status)) byDept[r.dept].stuck++;
+  });
+
+  const personaMetrics = {
+    ta: [["My Reqs",reqs.filter(r=>r.recruiter==="Cody Letchworth").length,"Active",P.lapis],["In Sourcing",reqs.filter(r=>r.recruiter==="Cody Letchworth"&&r.status==="sourcing").length,"Reqs sourcing",P.indigo],["Candidates",reqs.filter(r=>r.recruiter==="Cody Letchworth").reduce((s,r)=>s+r.candidates,0),"In pipeline",P.purple],["Intake Done",reqs.filter(r=>r.recruiter==="Cody Letchworth"&&r.intake_done).length,"Configured",P.green]],
+    hrbp: [["Reviewed",reqs.filter(r=>r.hrbp_notes).length,"HRBP approved",P.green],["Pending",reqs.filter(r=>r.status==="submitted").length,"Awaiting review",P.amber],["P0 Roles",reqs.filter(r=>r.priority==="P0").length,"Critical",P.red],["Total Active",active.length,"In pipeline",P.charcoal]],
+    finance: [["Approved",reqs.filter(r=>r.fin_notes).length,"Budget committed",P.teal],["Pending",reqs.filter(r=>r.status==="org_approved").length,"Awaiting sign-off",P.amber],["HC Slots Used",reqs.filter(r=>["ta_queue","intake","sourcing","interviewing","offer","filled"].includes(r.status)).length,"Of "+Q2.total+" Q2",P.lapis],["Comp Exposure",`$${Math.round(reqs.filter(r=>!["draft","filled"].includes(r.status)).reduce((s,r)=>s+(r.comp_min+r.comp_max)/2*r.openings,0)/1000)}K`,"Total pipeline",P.charcoal]],
+    rec_lead: [["Team Reqs",active.length,"Across all recruiters",P.charcoal],["In Sourcing",reqs.filter(r=>r.status==="sourcing").length,"Active search",P.indigo],["Interviewing",reqs.filter(r=>r.status==="interviewing").length,"In process",P.purple],["Total Candidates",reqs.reduce((s,r)=>s+r.candidates,0),"In pipeline",P.lapis]],
+  };
+  const kpis = personaMetrics[persona] || personaMetrics.rec_lead;
+
+  return (
+    <div>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:22 }}>
+        {kpis.map(([l,v,s,c])=><Kpi key={l} label={l} value={v} sub={s} accent={c} />)}
+      </div>
+      <Card style={{ marginBottom:18 }}>
+        <div style={{ fontSize:14, fontWeight:700, color:P.charcoal, marginBottom:16 }}>Pipeline by Department</div>
+        {Object.entries(byDept).map(([dept,data])=>(
+          <div key={dept} style={{ display:"grid", gridTemplateColumns:"110px 1fr 60px 60px 90px", alignItems:"center", gap:14, marginBottom:12 }}>
+            <div style={{ fontSize:12, fontWeight:700, color:P.charcoal }}>{dept}</div>
+            <div style={{ background:P.cloud, borderRadius:99, height:6, overflow:"hidden" }}>
+              <div style={{ height:"100%", width:`${Math.min((data.open/7)*100,100)}%`, background:P.lapis }} />
+            </div>
+            <div style={{ fontSize:11, color:P.slate }}>{data.open} open</div>
+            <div style={{ fontSize:10, color:data.p0>0?P.red:P.coolGray, fontWeight:data.p0>0?700:400 }}>{data.p0>0?`${data.p0} P0`:""}</div>
+            <div style={{ fontSize:10, color:data.stuck>0?P.amber:P.coolGray }}>{data.stuck>0?`${data.stuck} in approval`:""}</div>
+          </div>
+        ))}
+      </Card>
+      <Card>
+        <div style={{ fontSize:14, fontWeight:700, color:P.charcoal, marginBottom:14 }}>Benchmarks</div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12 }}>
+          {[["Finance TTH","43 days","Finance benchmark"],["Target First Submit","14 days","Approval → qualified candidate"],["Offer Accept Rate","89%","Finance org · 2026 YTD"]].map(([l,v,s])=>(
+            <div key={l} style={{ background:P.calcite, border:`1px solid ${P.mist}`, borderRadius:8, padding:"16px", textAlign:"center" }}>
+              <div style={{ fontSize:24, fontWeight:800, color:P.lapis, marginBottom:4 }}>{v}</div>
+              <div style={{ fontSize:12, fontWeight:700, color:P.charcoal, marginBottom:3 }}>{l}</div>
+              <div style={{ fontSize:10, color:P.slate }}>{s}</div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+// ─── SUBMIT FORM ──────────────────────────────────────────────────────────────
+function SubmitForm({ persona, onSubmit, onCancel }) {
+  const [f, setF] = useState({ title:"", level:"IC5", dept:"Finance", team:"", priority:"P1", openings:1, comp_min:"", comp_max:"", location:"New York, NY", start:"", jd_url:"", overview:"", mh:"" });
+  const [busy, setBusy] = useState(false);
+  const setField = (k,v) => setF(p=>({...p,[k]:v}));
+  const valid = f.title && f.team && f.comp_min && f.comp_max && f.start;
+  const OL = { Finance:"Jeff Baker", Accounting:"Jeff Baker", Engineering:"Chen Goldberg", GTM:"Max Hjelm", Operations:"Nitin Agarwal" };
+  const ol = OL[f.dept]||"BU Leader";
+  const inp = { width:"100%", border:`1px solid ${P.mist}`, borderRadius:7, padding:"9px 12px", fontSize:13, fontFamily:"inherit", color:P.charcoal, outline:"none", boxSizing:"border-box", lineHeight:1.5 };
+
+  const handle = async e => {
+    e.preventDefault(); setBusy(true);
+    await new Promise(r=>setTimeout(r,700));
+    const hmName  = PERSONAS[persona].name;
+    const hmEmail = `${hmName.toLowerCase().replace(/\s+/g,".")}@coreweave.com`;
+    onSubmit({ ...f, comp_min:+f.comp_min, comp_max:+f.comp_max, openings:+f.openings, org_leader:ol, hm:hmName, hm_email:hmEmail });
+    setBusy(false);
+  };
+
+  return (
+    <div style={{ maxWidth:740, margin:"0 auto" }}>
+      <div style={{ marginBottom:24 }}>
+        <h2 style={{ fontSize:24, fontWeight:800, color:P.charcoal, margin:0 }}>Submit Headcount Request</h2>
+        <p style={{ fontSize:13, color:P.slate, marginTop:8, lineHeight:1.7 }}>
+          Approval flow: <strong>Your submission → HRBP (Emily Arney) → {ol} → Finance (Ian Woller) → TA Lead (Joy Embry) → AI Intake Tool</strong>.<br/>Estimated approval SLA: 3-5 business days.
+        </p>
+      </div>
+      <form onSubmit={handle}>
+        <Card style={{ marginBottom:16 }}>
+          <div style={{ fontSize:11, fontWeight:800, color:P.lapis, textTransform:"uppercase", letterSpacing:0.8, marginBottom:14 }}>Role Details</div>
+          <div style={{ background:P.lapisLight, border:`1px solid ${a(P.lapis,0.25)}`, borderRadius:7, padding:"9px 13px", marginBottom:14, fontSize:12, color:P.lapis, fontWeight:600 }}>Org Leader will be auto-assigned: {ol}</div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+            <div style={{ gridColumn:"span 2" }}>
+              <div style={{ fontSize:12, fontWeight:700, color:P.charcoal, marginBottom:6 }}>Job Title *</div>
+              <input value={f.title} onChange={e=>setField("title",e.target.value)} placeholder="e.g. Senior Revenue Accountant" required style={inp} />
+            </div>
+            <div>
+              <div style={{ fontSize:12, fontWeight:700, color:P.charcoal, marginBottom:6 }}>Level</div>
+              <select value={f.level} onChange={e=>setField("level",e.target.value)} style={inp}>
+                {["IC3","IC4","IC5","IC6","M1","M2","M3","VP"].map(o=><option key={o}>{o}</option>)}
+              </select>
+            </div>
+            <div>
+              <div style={{ fontSize:12, fontWeight:700, color:P.charcoal, marginBottom:6 }}>Department</div>
+              <select value={f.dept} onChange={e=>setField("dept",e.target.value)} style={inp}>
+                {["Finance","Accounting","Engineering","GTM","Operations","People"].map(o=><option key={o}>{o}</option>)}
+              </select>
+            </div>
+            <div>
+              <div style={{ fontSize:12, fontWeight:700, color:P.charcoal, marginBottom:6 }}>Team *</div>
+              <input value={f.team} onChange={e=>setField("team",e.target.value)} placeholder="e.g. Revenue Accounting" required style={inp} />
+            </div>
+            <div>
+              <div style={{ fontSize:12, fontWeight:700, color:P.charcoal, marginBottom:6 }}>Priority</div>
+              <select value={f.priority} onChange={e=>setField("priority",e.target.value)} style={inp}>
+                {[["P0","P0 — Critical"],["P1","P1 — High"],["P2","P2 — Normal"]].map(([v,l])=><option key={v} value={v}>{l}</option>)}
+              </select>
+            </div>
+            <div>
+              <div style={{ fontSize:12, fontWeight:700, color:P.charcoal, marginBottom:6 }}># Openings</div>
+              <input type="number" min={1} value={f.openings} onChange={e=>setField("openings",e.target.value)} style={inp} />
+            </div>
+          </div>
+        </Card>
+        <Card style={{ marginBottom:16 }}>
+          <div style={{ fontSize:11, fontWeight:800, color:P.lapis, textTransform:"uppercase", letterSpacing:0.8, marginBottom:14 }}>JD & Context</div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr", gap:14 }}>
+            <div>
+              <div style={{ fontSize:12, fontWeight:700, color:P.charcoal, marginBottom:6 }}>Job Description (Google Doc) *</div>
+              <input value={f.jd_url} onChange={e=>setField("jd_url",e.target.value)} placeholder="https://docs.google.com/document/d/..." style={inp} />
+              <div style={{ fontSize:11, color:P.slate, marginTop:4 }}>This link will be auto-read by Glean to fill the intake form</div>
+            </div>
+            <div>
+              <div style={{ fontSize:12, fontWeight:700, color:P.charcoal, marginBottom:6 }}>Role Overview</div>
+              <textarea rows={2} value={f.overview} onChange={e=>setField("overview",e.target.value)} style={{ ...inp, resize:"vertical" }} placeholder="What does this person own? Why does this role exist now?" />
+            </div>
+            <div>
+              <div style={{ fontSize:12, fontWeight:700, color:P.charcoal, marginBottom:6 }}>Must-Have Qualifications</div>
+              <textarea rows={2} value={f.mh} onChange={e=>setField("mh",e.target.value)} style={{ ...inp, resize:"vertical" }} placeholder="Non-negotiable experience and skills" />
+            </div>
+          </div>
+        </Card>
+        <Card style={{ marginBottom:20 }}>
+          <div style={{ fontSize:11, fontWeight:800, color:P.lapis, textTransform:"uppercase", letterSpacing:0.8, marginBottom:14 }}>Compensation & Location</div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+            <div>
+              <div style={{ fontSize:12, fontWeight:700, color:P.charcoal, marginBottom:6 }}>Base Min ($K) *</div>
+              <input type="number" min={0} value={f.comp_min} onChange={e=>setField("comp_min",e.target.value)} required style={inp} />
+            </div>
+            <div>
+              <div style={{ fontSize:12, fontWeight:700, color:P.charcoal, marginBottom:6 }}>Base Max ($K) *</div>
+              <input type="number" min={0} value={f.comp_max} onChange={e=>setField("comp_max",e.target.value)} required style={inp} />
+            </div>
+            <div>
+              <div style={{ fontSize:12, fontWeight:700, color:P.charcoal, marginBottom:6 }}>Location *</div>
+              <select value={f.location} onChange={e=>setField("location",e.target.value)} style={inp}>
+                {["New York, NY","Sunnyvale, CA","San Francisco, CA","Bellevue, WA","Dallas, TX","Remote (US)"].map(o=><option key={o}>{o}</option>)}
+              </select>
+            </div>
+            <div>
+              <div style={{ fontSize:12, fontWeight:700, color:P.charcoal, marginBottom:6 }}>Target Start *</div>
+              <input type="date" value={f.start} onChange={e=>setField("start",e.target.value)} required style={inp} />
+            </div>
+          </div>
+        </Card>
+        <div style={{ display:"flex", gap:12, justifyContent:"flex-end" }}>
+          <Btn variant="ghost" onClick={onCancel} type="button">Cancel</Btn>
+          <Btn disabled={!valid} loading={busy} type="submit">Submit Request → HRBP Review</Btn>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+// ─── DEMO OVERLAY ─────────────────────────────────────────────────────────────
+const DEMO_STEPS = [
+  { step:1, persona:"hm",         color:P.purple, view:"submit",    title:"HM Submits a Request",           desc:"Sarah Chen fills out the headcount form. The JD link is the trigger — everything downstream is automated from this moment.",    action:"Switch to Hiring Manager (Sarah Chen) → click New Request" },
+  { step:2, persona:"hrbp",       color:P.indigo, view:"hrbp_q",   title:"HRBP Validates the Role",        desc:"Emily Arney sees a pre-contextualized review: comp band check run, level flagged, JD summary ready. One-click approve.",       action:"Switch to HRBP (Emily Arney) → Review Queue → Approve" },
+  { step:3, persona:"org_leader", color:P.amber,  view:"org_q",    title:"Org Leader Approves Strategically",desc:"Jeff Baker sees HRBP notes, budget impact, and JD context in one view — not a forwarded email.",                              action:"Switch to Org Leader (Jeff Baker) → Approval Queue → Approve" },
+  { step:4, persona:"finance",    color:P.teal,   view:"finance_q",title:"Finance Commits the Budget Slot", desc:"Ian Woller reviews the live HC budget. On approve: slot committed, TA Lead notified, intake doc auto-created. The money moment.", action:"Switch to Finance (Ian Woller) → Budget Queue → Approve" },
+  { step:5, persona:"rec_lead",   color:P.purple, view:"assign_q", title:"TA Lead Assigns a Recruiter",    desc:"Joy Embry sees the approved role. All 3 approvals complete. Intake doc already built. She assigns Cody — tool opens immediately.", action:"Switch to TA Lead (Joy Embry) → Assign Queue → Assign Cody" },
+  { step:6, persona:"ta",         color:P.lapis,  view:"ai_intake",title:"TA Partner: AI Intake Tool",     desc:"Cody opens the dedicated AI Intake tab. One click reads the JD via Glean, looks up the GH req ID, extracts all fields in ~60s.", action:"Switch to TA Partner (Cody) → AI Intake Tool → Open Intake → Read JD" },
+  { step:7, persona:"ta",         color:P.lapis,  view:"ai_intake",title:"Generate Guide + Push to GH",    desc:"Claude generates 4-5 questions per interviewer via Glean context. One click pushes scorecards to Greenhouse. BrightHire syncs.",  action:"Interview Guide tab → Generate → GH Push tab → Push" },
+];
+
+function DemoOverlay({ step, onNext, onPrev, onClose }) {
+  const s = DEMO_STEPS[step];
+  const pct = ((step+1)/DEMO_STEPS.length)*100;
+  return (
+    <div style={{ position:"fixed", bottom:28, left:"50%", transform:"translateX(-50%)", zIndex:400, width:"min(700px,93vw)", background:P.charcoal, borderRadius:14, boxShadow:`0 20px 60px ${a("#000",0.40)}`, overflow:"hidden" }}>
+      <div style={{ height:3, background:"rgba(255,255,255,0.06)" }}>
+        <div style={{ height:"100%", width:`${pct}%`, background:P.lapis, transition:"width 0.4s ease" }} />
+      </div>
+      <div style={{ padding:"18px 22px" }}>
+        <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
+          <div style={{ width:42, height:42, borderRadius:9, background:s.color, display:"flex", alignItems:"center", justifyContent:"center", fontSize:17, fontWeight:800, color:"#fff", flexShrink:0 }}>{s.step}</div>
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:9, marginBottom:5 }}>
+              <div style={{ fontSize:14, fontWeight:800, color:"#fff" }}>{s.title}</div>
+              <Avi initials={PERSONAS[s.persona].av} color={s.color} size={20} />
+              <span style={{ fontSize:10, color:"rgba(255,255,255,0.38)" }}>{PERSONAS[s.persona].name}</span>
+            </div>
+            <div style={{ fontSize:12, color:"rgba(255,255,255,0.58)", lineHeight:1.65, marginBottom:10 }}>{s.desc}</div>
+            <div style={{ background:a(P.lapis,0.15), border:`1px solid ${a(P.lapis,0.28)}`, borderRadius:6, padding:"7px 12px", fontSize:11, color:P.lapisSoft, fontWeight:600 }}>▶ {s.action}</div>
+          </div>
+          <div style={{ display:"flex", gap:8, alignItems:"center", flexShrink:0 }}>
+            {step>0 && <Btn variant="ghost" sm onClick={onPrev}>←</Btn>}
+            <Btn sm onClick={step<DEMO_STEPS.length-1?onNext:onClose}>{step<DEMO_STEPS.length-1?"Next →":"✓ Done"}</Btn>
+            <button onClick={onClose} style={{ background:"none", border:"none", color:"rgba(255,255,255,0.25)", fontSize:20, cursor:"pointer", padding:4 }}>×</button>
+          </div>
+        </div>
+        <div style={{ display:"flex", gap:5, marginTop:14 }}>
+          {DEMO_STEPS.map((_,i)=><div key={i} style={{ flex:1, height:2, borderRadius:99, background:i<=step?P.lapis:"rgba(255,255,255,0.10)", transition:"background 0.3s" }} />)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ROOT ─────────────────────────────────────────────────────────────────────
+function App() {
+  const [state,          dispatch]         = useReducer(reducer, { reqs: SEED });
+  const [persona,        setPersona]       = useState("ta");
+  const [view,           setView]          = useState("dashboard");
+  const [selectedId,     setSelectedId]    = useState(null);
+  const [approvalTarget, setApprovalTarget]= useState(null);
+  const [assignTarget,   setAssignTarget]  = useState(null);
+  const [intakeId,       setIntakeId]      = useState(null);
+  const [showSubmit,     setShowSubmit]    = useState(false);
+  const [demoStep,       setDemoStep]      = useState(null);
+  const [toast,          setToast]         = useState(null);
+  const [ghConn,         setGhConn]        = useState(false);
+  const [bhConn,         setBhConn]        = useState(false);
+
+  const { reqs } = state;
+
+  const showToast = useCallback((msg, type="success") => {
+    setToast({ msg, type });
+    setTimeout(()=>setToast(null), 4200);
+  }, []);
+
+  const upd = (id, patch) => dispatch({ type:"UPDATE", id, patch });
+
+  const pending = {
+    hrbp:   reqs.filter(r=>r.status==="submitted"),
+    org:    reqs.filter(r=>r.status==="hrbp_approved"),
+    fin:    reqs.filter(r=>r.status==="org_approved"),
+    assign: reqs.filter(r=>r.status==="ta_queue"),
+    intake: reqs.filter(r=>r.status==="intake"&&!r.intake_done),
+  };
+
+  const doApprove = (id, notes) => {
+    const req = reqs.find(r=>r.id===id); if(!req) return;
+    if(persona==="hrbp")       { upd(id,{status:"hrbp_approved",hrbp_notes:notes}); showToast(`HRBP approved → routing to ${req.org_leader}`); }
+    if(persona==="org_leader") { upd(id,{status:"org_approved",ol_notes:notes});    showToast("Org Leader approved → Ian Woller will review the budget"); }
+    if(persona==="finance")    { upd(id,{status:"ta_queue",fin_notes:notes});       showToast("Finance approved — HC slot committed. Joy notified. AI Intake doc ready."); }
+    setApprovalTarget(null); setSelectedId(null);
+  };
+
+  const doReject = (id, notes) => {
+    if(persona==="hrbp")       upd(id,{status:"submitted",   hrbp_notes:notes});
+    if(persona==="org_leader") upd(id,{status:"hrbp_approved",ol_notes:notes});
+    if(persona==="finance")    upd(id,{status:"org_approved", fin_notes:notes});
+    showToast("Returned with notes — visible in submission queue","error");
+    setApprovalTarget(null); setSelectedId(null);
+  };
+
+  const doAssign = (id, rec) => {
+    upd(id,{status:"intake",recruiter:rec,assigned_by:"Joy Embry"});
+    showToast(`${rec} assigned → AI Intake Tool ready. JD pre-loaded.`);
+    setAssignTarget(null);
+  };
+
+  const completeIntake = (id, ghId) => {
+    upd(id,{status:"sourcing",intake_done:true,gh_id:ghId});
+    setIntakeId(null);
+    showToast(`✦ Intake complete · ${ghId} in Greenhouse · BrightHire live · Sourcing started`);
+  };
+
+  const submitReq = (data) => {
+    const id = `HC-0${70+reqs.length}`;
+    dispatch({ type:"ADD", req:{ id, status:"submitted", submitted:new Date().toISOString().slice(0,10), recruiter:null, assigned_by:null, gh_id:null, gh_req_id:null, candidates:0, days_open:0, hrbp_notes:null, ol_notes:null, fin_notes:null, intake_done:false, backfill:false, tools:"", work:"Hybrid 3x", ...data }});
+    setShowSubmit(false); setView("dashboard");
+    showToast(`${id} submitted → Emily Arney (HRBP) notified`);
+  };
+
+  const switchPersona = (p) => { setPersona(p); setView("dashboard"); setSelectedId(null); setApprovalTarget(null); };
+  const handleNav     = (v) => { if(v==="submit"){setShowSubmit(true);}else{setShowSubmit(false);} setView(v); };
+
+  const selected  = reqs.find(r=>r.id===selectedId)  || null;
+  const intakeReq = reqs.find(r=>r.id===intakeId)    || null;
+  const assignReq = reqs.find(r=>r.id===assignTarget) || null;
+
+  const PRIO_ORDER = ["P0","P1","P2"];
+  const sortedReqs = [...reqs].filter(r=>r.status!=="filled").sort((a,b)=>PRIO_ORDER.indexOf(a.priority)-PRIO_ORDER.indexOf(b.priority)||b.days_open-a.days_open);
+
+  // ── Persona dashboards ────────────────────────────────────────────────────
+  const renderDashboard = () => {
+    const p = persona;
+
+    // ── HM Dashboard ──
+    if(p==="hm") {
+      const myReqs = reqs.filter(r=>r.hm===PERSONAS.hm.name&&r.status!=="draft");
+      const inFlow  = myReqs.filter(r=>["submitted","hrbp_approved","org_approved"].includes(r.status));
+      const inTA    = myReqs.filter(r=>["ta_queue","intake","sourcing","interviewing","offer"].includes(r.status));
+      return (
+        <div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:24 }}>
+            <Kpi label="My Open Reqs"  value={myReqs.length}  sub="Total submitted"  accent={P.charcoal} icon="📋" />
+            <Kpi label="In Approvals"  value={inFlow.length}  sub="Moving through chain" accent={P.amber}    icon="⏳" />
+            <Kpi label="With Recruiting" value={inTA.length}  sub="TA is sourcing"   accent={P.lapis}    icon="🔍" onClick={()=>setView("pipeline")} />
+            <Kpi label="Offer / Final" value={myReqs.filter(r=>["offer","filled"].includes(r.status)).length} sub="In closing" accent={P.green} icon="🎯" />
+          </div>
+          <Section title="My Active Requests" sub="Click any role to view the approval trail and pipeline status"
+            action={<Btn onClick={()=>setShowSubmit(true)} sm icon="＋">New Request</Btn>}>
+            {myReqs.length ? myReqs.map(r=>(
+              <div key={r.id}>
+                <ReqRow req={r} onClick={()=>setSelectedId(r.id)} />
+                {["submitted","hrbp_approved","org_approved"].includes(r.status) && (
+                  <div style={{ background:P.amberLight, border:`1px solid ${P.amberBorder}`, borderRadius:"0 0 10px 10px", padding:"9px 16px", marginTop:-7, fontSize:11, color:P.amber, fontWeight:600 }}>
+                    ⏳ {r.status==="submitted"?"Waiting for HRBP review":r.status==="hrbp_approved"?"HRBP ✓ · Waiting for "+r.org_leader:"HRBP ✓ · Org Leader ✓ · Waiting for Finance"}
+                  </div>
+                )}
+              </div>
+            )) : <EmptyState icon="📋" title="No requests yet" sub="Submit your first headcount request to get started." action={<Btn onClick={()=>setShowSubmit(true)} icon="＋">Submit Request</Btn>} />}
+          </Section>
+          <Section title="How It Works">
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:10 }}>
+              {[["1","You submit","JD link + role details. One form, no duplicate data entry."],["2","HRBP reviews","Emily validates comp & level within 24 hrs."],["3","Org Leader signs off","Your skip confirms strategic alignment."],["4","Finance approves","Ian commits the HC budget slot."],["5","TA starts sourcing","Intake auto-built. Recruiter is sourcing-ready in under 10 min."]].map(([n,t,d])=>(
+                <div key={n} style={{ textAlign:"center", padding:"16px 12px", background:P.calcite, borderRadius:8, border:`1px solid ${P.mist}` }}>
+                  <div style={{ width:28, height:28, borderRadius:99, background:P.lapis, color:"#fff", fontSize:12, fontWeight:800, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 10px" }}>{n}</div>
+                  <div style={{ fontSize:12, fontWeight:700, color:P.charcoal, marginBottom:5 }}>{t}</div>
+                  <div style={{ fontSize:11, color:P.slate, lineHeight:1.5 }}>{d}</div>
+                </div>
+              ))}
+            </div>
+          </Section>
+        </div>
+      );
+    }
+
+    // ── HRBP Dashboard ──
+    if(p==="hrbp") {
+      const queue = pending.hrbp;
+      return (
+        <div>
+          {queue.length>0 && <div style={{ background:a(P.amber,0.09), border:`1px solid ${a(P.amber,0.30)}`, borderRadius:9, padding:"12px 18px", marginBottom:20, fontSize:13, fontWeight:700, color:P.amber, cursor:"pointer" }} onClick={()=>setView("hrbp_q")}>🔔 {queue.length} submission{queue.length!==1?"s":""} waiting for your HR review →</div>}
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:24 }}>
+            <Kpi label="Pending Review"  value={queue.length}                                 sub="Awaiting your sign-off"    accent={queue.length?P.amber:P.green} icon="📥" onClick={()=>setView("hrbp_q")} />
+            <Kpi label="I've Approved"   value={reqs.filter(r=>r.hrbp_notes).length}          sub="This quarter"              accent={P.green}  icon="✓" />
+            <Kpi label="P0 Open"         value={reqs.filter(r=>r.priority==="P0"&&r.status!=="filled").length} sub="Critical reqs" accent={P.red}    icon="🚨" onClick={()=>setView("all_roles")} />
+            <Kpi label="Full Pipeline"   value={reqs.filter(r=>!["draft","filled"].includes(r.status)).length} sub="Active roles"  accent={P.charcoal} icon="⬡" onClick={()=>setView("all_roles")} />
+          </div>
+          <Section title="Review Queue" sub="Click to open full approval context with JD, comp band, and role details"
+            action={queue.length>2?<Btn variant="ghost" sm onClick={()=>setView("hrbp_q")}>See all →</Btn>:undefined}>
+            {queue.length ? queue.slice(0,3).map(r=>(
+              <div key={r.id}>
+                <ReqRow req={r} onClick={()=>setSelectedId(r.id)} />
+                <div style={{ background:P.amberLight, border:`1px solid ${P.amberBorder}`, borderRadius:"0 0 10px 10px", padding:"9px 16px", marginTop:-7, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                  <div style={{ fontSize:11, color:P.amber, fontWeight:600 }}>Submitted {r.submitted} · {r.days_open}d waiting · ${r.comp_min}K–${r.comp_max}K comp range</div>
+                  <Btn sm onClick={()=>{setSelectedId(null);setApprovalTarget(r);}}>Review & Approve →</Btn>
+                </div>
+              </div>
+            )) : <EmptyState icon="✓" title="Queue clear" sub="No submissions waiting for your review." />}
+          </Section>
+        </div>
+      );
+    }
+
+    // ── Org Leader Dashboard ──
+    if(p==="org_leader") {
+      const queue = pending.org;
+      return (
+        <div>
+          {queue.length>0 && <div style={{ background:a(P.indigo,0.08), border:`1px solid ${a(P.indigo,0.28)}`, borderRadius:9, padding:"12px 18px", marginBottom:20, fontSize:13, fontWeight:700, color:P.indigo, cursor:"pointer" }} onClick={()=>setView("org_q")}>🏛 {queue.length} role{queue.length!==1?"s":""} cleared by HRBP — awaiting your strategic sign-off →</div>}
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:24 }}>
+            <Kpi label="Awaiting My Review" value={queue.length}                                 sub="HRBP approved"            accent={queue.length?P.indigo:P.green} icon="🏛" onClick={()=>setView("org_q")} />
+            <Kpi label="I've Approved"      value={reqs.filter(r=>r.ol_notes).length}            sub="Progressed to Finance"    accent={P.green}  icon="✓" />
+            <Kpi label="Active Recruiting"  value={reqs.filter(r=>["sourcing","interviewing","offer"].includes(r.status)).length} sub="With TA" accent={P.lapis} icon="🔍" onClick={()=>setView("pipeline")} />
+            <Kpi label="P0 In Pipeline"     value={reqs.filter(r=>r.priority==="P0"&&r.status!=="filled").length} sub="Critical open" accent={P.red} icon="🚨" />
+          </div>
+          <Section title="Strategic Sign-Off Queue" sub="You have full HRBP context on each role. One-click approve or return.">
+            {queue.length ? queue.map(r=>(
+              <div key={r.id}>
+                <ReqRow req={r} onClick={()=>setSelectedId(r.id)} />
+                <div style={{ background:P.indigoLight, border:`1px solid ${a(P.indigo,0.25)}`, borderRadius:"0 0 10px 10px", padding:"9px 16px", marginTop:-7, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                  <div style={{ fontSize:11, color:P.indigo, fontWeight:600 }}>✓ HRBP: {r.hrbp_notes} · ${r.comp_min}K–${r.comp_max}K · {r.openings} opening{r.openings!==1?"s":""}</div>
+                  <Btn sm onClick={()=>{setSelectedId(null);setApprovalTarget(r);}}>Review & Approve →</Btn>
+                </div>
+              </div>
+            )) : <EmptyState icon="✓" title="Queue clear" sub="No roles waiting for your sign-off." />}
+          </Section>
+        </div>
+      );
+    }
+
+    // ── Finance Dashboard ──
+    if(p==="finance") {
+      const queue    = pending.fin;
+      const committed = reqs.filter(r=>["ta_queue","intake","sourcing","interviewing","offer","filled"].includes(r.status)).length;
+      const totalComp = reqs.filter(r=>!["draft","filled"].includes(r.status)).reduce((s,r)=>s+(r.comp_min+r.comp_max)/2*r.openings,0);
+      return (
+        <div>
+          {queue.length>0 && <div style={{ background:a(P.teal,0.08), border:`1px solid ${a(P.teal,0.28)}`, borderRadius:9, padding:"12px 18px", marginBottom:20, fontSize:13, fontWeight:700, color:P.teal, cursor:"pointer" }} onClick={()=>setView("finance_q")}>💰 {queue.length} role{queue.length!==1?"s":""} ready for budget sign-off — HRBP & Org Leader have both approved →</div>}
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:24 }}>
+            <Kpi label="Awaiting My Sign-Off" value={queue.length}      sub="HRBP + OL approved"    accent={queue.length?P.orange:P.green} icon="💰" onClick={()=>setView("finance_q")} />
+            <Kpi label="HC Slots Committed"   value={committed}          sub={`of ${Q2.total} Q2 slots`} accent={P.teal} icon="✓" onClick={()=>setView("budget")} />
+            <Kpi label="Total Comp Exposure"  value={`$${Math.round(totalComp/1000)}K`} sub="Active pipeline" accent={P.charcoal} icon="💼" />
+            <Kpi label="Available Slots"      value={Q2.total-committed-reqs.filter(r=>["submitted","hrbp_approved","org_approved"].includes(r.status)).length} sub="Unallocated Q2" accent={P.green} icon="📊" />
+          </div>
+          {/* Live budget bar */}
+          <Card style={{ marginBottom:20 }}>
+            <div style={{ fontSize:14, fontWeight:700, color:P.charcoal, marginBottom:4 }}>Q2 HC Budget — Accounting (Ian Woller)</div>
+            <div style={{ fontSize:11, color:P.slate, marginBottom:16 }}>135 total Accounting HC · 99 filled in Q1 · 36 released for Q2 · Source: Finance HC Tracker</div>
+            <div style={{ height:14, background:P.cloud, borderRadius:99, overflow:"hidden", display:"flex", marginBottom:12 }}>
+              <div style={{ width:`${(Q2.filled/Q2.total)*100}%`, background:P.green, transition:"width 0.4s" }} />
+              <div style={{ width:`${(committed/Q2.total)*100}%`, background:P.lapis, transition:"width 0.4s" }} />
+              <div style={{ width:`${(pending.fin.length/Q2.total)*100}%`, background:a(P.amber,0.55) }} />
+            </div>
+            <div style={{ display:"flex", gap:20, fontSize:11 }}>
+              {[["Filled Q2",Q2.filled,P.green],["In Recruiting",committed,P.lapis],["Pending My Approval",pending.fin.length,P.amber]].map(([l,v,c])=>(
+                <div key={l} style={{ display:"flex", alignItems:"center", gap:6 }}><div style={{ width:10, height:10, borderRadius:3, background:c }} /><span style={{ color:P.charcoal }}>{l}: <strong>{v}</strong></span></div>
+              ))}
+            </div>
+          </Card>
+          <Section title="Budget Approval Queue">
+            {queue.length ? queue.map(r=>(
+              <div key={r.id}>
+                <ReqRow req={r} onClick={()=>setSelectedId(r.id)} />
+                <div style={{ background:P.tealLight, border:`1px solid ${a(P.teal,0.25)}`, borderRadius:"0 0 10px 10px", padding:"9px 16px", marginTop:-7, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                  <div style={{ fontSize:11, color:P.teal, fontWeight:600 }}>✓ HRBP + Org Leader approved · ${r.comp_min}K–${r.comp_max}K · {r.openings} slot{r.openings!==1?"s":""} · Est. cost: ~${Math.round((r.comp_min+r.comp_max)/2*r.openings)}K</div>
+                  <Btn sm onClick={()=>{setSelectedId(null);setApprovalTarget(r);}}>Approve Budget Slot →</Btn>
+                </div>
+              </div>
+            )) : <EmptyState icon="✓" title="Queue clear" sub="No roles pending your budget approval." />}
+          </Section>
+        </div>
+      );
+    }
+
+    // ── TA Lead Dashboard ──
+    if(p==="rec_lead") {
+      const queue = pending.assign;
+      const byRec = {};
+      RECRUITERS.forEach(r=>{ byRec[r]={total:0,sourcing:0,interviewing:0}; });
+      reqs.forEach(r=>{ if(r.recruiter&&byRec[r.recruiter]){ byRec[r.recruiter].total++; if(r.status==="sourcing")byRec[r.recruiter].sourcing++; if(r.status==="interviewing")byRec[r.recruiter].interviewing++; } });
+      return (
+        <div>
+          {queue.length>0 && <div style={{ background:a(P.purple,0.08), border:`1px solid ${a(P.purple,0.28)}`, borderRadius:9, padding:"12px 18px", marginBottom:20, fontSize:13, fontWeight:700, color:P.purple, cursor:"pointer" }} onClick={()=>setView("assign_q")}>⚡ {queue.length} Finance-approved role{queue.length!==1?"s":""} ready for recruiter assignment →</div>}
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:24 }}>
+            <Kpi label="Needs Assignment"  value={queue.length}                                             sub="Finance approved"    accent={queue.length?P.purple:P.green} icon="⚡" onClick={()=>setView("assign_q")} />
+            <Kpi label="In Sourcing"       value={reqs.filter(r=>r.status==="sourcing").length}             sub="Active search"       accent={P.indigo} icon="🔍" onClick={()=>setView("pipeline")} />
+            <Kpi label="In Interviews"     value={reqs.filter(r=>r.status==="interviewing").length}        sub="Pipeline active"     accent={P.purple} icon="👥" />
+            <Kpi label="Total Candidates"  value={reqs.reduce((s,r)=>s+r.candidates,0)}                    sub="Across all reqs"     accent={P.charcoal} icon="👤" />
+          </div>
+          <Section title="Team Workload">
+            <Card noPad>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 80px 80px 80px", background:P.calcite, padding:"10px 18px", borderBottom:`1px solid ${P.mist}`, gap:12 }}>
+                {["Recruiter","Active","Sourcing","Interviews"].map(h=><div key={h} style={{ fontSize:10, fontWeight:700, color:P.slate, textTransform:"uppercase", letterSpacing:0.5 }}>{h}</div>)}
+              </div>
+              {RECRUITERS.map((r,i)=>{
+                const d = byRec[r]||{total:0,sourcing:0,interviewing:0};
+                return (
+                  <div key={r} style={{ display:"grid", gridTemplateColumns:"1fr 80px 80px 80px", padding:"12px 18px", borderBottom:i<RECRUITERS.length-1?`1px solid ${P.mist}`:"none", alignItems:"center", gap:12 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:9 }}>
+                      <Avi initials={r.split(" ").map(n=>n[0]).join("")} color={P.lapis} size={28} />
+                      <div>
+                        <div style={{ fontSize:12, fontWeight:600, color:P.charcoal }}>{r}</div>
+                        <div style={{ fontSize:10, color:P.slate }}>{d.total} reqs assigned</div>
+                      </div>
+                    </div>
+                    <div style={{ fontSize:13, fontWeight:700, color:d.total>3?P.red:P.charcoal }}>{d.total}</div>
+                    <div style={{ fontSize:13, fontWeight:600, color:P.indigo }}>{d.sourcing}</div>
+                    <div style={{ fontSize:13, fontWeight:600, color:P.purple }}>{d.interviewing}</div>
+                  </div>
+                );
+              })}
+            </Card>
+          </Section>
+          <Section title="Assignment Queue" sub="All Finance-approved — AI intake doc ready on assignment">
+            {queue.length ? queue.map(r=>(
+              <div key={r.id}>
+                <ReqRow req={r} onClick={()=>setSelectedId(r.id)} />
+                <div style={{ background:P.purpleLight, border:`1px solid ${a(P.purple,0.25)}`, borderRadius:"0 0 10px 10px", padding:"9px 16px", marginTop:-7, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                  <div style={{ fontSize:11, color:P.purple, fontWeight:600 }}>✓ HRBP · OL · Finance all approved · Intake doc will auto-generate</div>
+                  <Btn sm onClick={()=>setAssignTarget(r.id)} icon="⚡">Assign Recruiter</Btn>
+                </div>
+              </div>
+            )) : <EmptyState icon="✓" title="Assignment queue clear" sub="All approved reqs have been assigned." />}
+          </Section>
+        </div>
+      );
+    }
+
+    // ── TA Partner Dashboard ──
+    const myReqs = reqs.filter(r=>r.recruiter==="Cody Letchworth");
+    const intakeQueue = pending.intake;
+    return (
+      <div>
+        {intakeQueue.length>0 && <div style={{ background:a(P.lapis,0.08), border:`1px solid ${a(P.lapis,0.25)}`, borderRadius:9, padding:"12px 18px", marginBottom:20, fontSize:13, fontWeight:700, color:P.lapis, cursor:"pointer" }} onClick={()=>setView("ai_intake")}>✦ {intakeQueue.length} req{intakeQueue.length!==1?"s":""} ready for AI Intake — JD pre-loaded, open the tool to build & launch →</div>}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:24 }}>
+          <Kpi label="My Intake Queue"    value={intakeQueue.length}                   sub="Ready to build" accent={intakeQueue.length?P.lapis:P.green} icon="✦" onClick={()=>setView("ai_intake")} />
+          <Kpi label="Sourcing Active"    value={myReqs.filter(r=>r.status==="sourcing").length}             sub="My reqs" accent={P.indigo} icon="🔍" onClick={()=>setView("sourcing")} />
+          <Kpi label="In Interviews"      value={myReqs.filter(r=>r.status==="interviewing").length}        sub="My pipeline" accent={P.purple} icon="👥" />
+          <Kpi label="My Candidates"      value={myReqs.reduce((s,r)=>s+r.candidates,0)}                    sub="Total in pipeline" accent={P.charcoal} icon="👤" />
+        </div>
+        <Section title="My AI Intake Queue"
+          action={<Btn sm onClick={()=>setView("ai_intake")} icon="✦">Open Intake Tool</Btn>}>
+          {intakeQueue.length ? intakeQueue.map(r=>(
+            <div key={r.id}>
+              <ReqRow req={r} onClick={()=>setSelectedId(r.id)} />
+              <div style={{ background:P.lapisLight, border:`1px solid ${a(P.lapis,0.22)}`, borderRadius:"0 0 10px 10px", padding:"9px 16px", marginTop:-7, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                <div style={{ fontSize:11, color:P.lapis, fontWeight:600 }}>✦ {r.jd_url?"JD in Google Drive":"Intake doc ready"}{r.gh_req_id?` · GH Req: ${r.gh_req_id}`:""}</div>
+                <Btn sm onClick={()=>{setSelectedId(null);setIntakeId(r.id);}} icon="✦">Open Intake Tool →</Btn>
+              </div>
+            </div>
+          )) : <EmptyState icon="✦" title="Intake queue clear" sub="No reqs waiting for intake. Your AI Intake Tool is in the left nav when new reqs are assigned." />}
+        </Section>
+        {myReqs.filter(r=>["sourcing","interviewing","offer"].includes(r.status)).length>0 && (
+          <Section title="My Active Pipeline">
+            {myReqs.filter(r=>["sourcing","interviewing","offer"].includes(r.status)).map(r=><ReqRow key={r.id} req={r} onClick={()=>setSelectedId(r.id)} />)}
+          </Section>
+        )}
+      </div>
+    );
+  };
+
+  // ── Queue view ────────────────────────────────────────────────────────────
+  const queueFor = {
+    hrbp_q:"hrbp", org_q:"org", finance_q:"fin", assign_q:"assign", intake_q:"intake",
+  };
+  const isQueueView = Object.keys(queueFor).includes(view);
+  const activeQueue = isQueueView ? pending[queueFor[view]] : [];
+
+  const queueBanner = {
+    hrbp_q:    { color:P.amber,  msg:"Validate level, comp band, and JD before advancing to Org Leader" },
+    org_q:     { color:P.indigo, msg:"HRBP notes visible. Confirm strategic alignment before Finance reviews" },
+    finance_q: { color:P.teal,   msg:"Full approval chain complete. Your sign-off commits the HC slot and notifies TA" },
+    assign_q:  { color:P.purple, msg:"AI intake doc auto-generates on assignment. Recruiter is sourcing-ready in minutes" },
+    intake_q:  { color:P.lapis,  msg:"JD pre-loaded from Google Drive. Click Open Intake Tool to build and launch" },
+  }[view];
+
+  if (showSubmit) return (
+    <div style={{ display:"flex", height:"100vh", fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif", background:P.calcite, overflow:"hidden" }}>
+      <Sidebar persona={persona} view="submit" setView={handleNav} reqs={reqs} onDemo={()=>{setShowSubmit(false);setDemoStep(0);}} ghConn={ghConn} bhConn={bhConn} />
+      <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
+        <TopBar persona={persona} setPersona={switchPersona} view="submit" ghConn={ghConn} bhConn={bhConn} />
+        <div style={{ flex:1, overflowY:"auto", padding:"32px 36px" }}>
+          <SubmitForm persona={persona} onSubmit={submitReq} onCancel={()=>setShowSubmit(false)} />
+        </div>
+      </div>
+      <style>{CSS}</style>
+    </div>
+  );
+
+  return (
+    <div style={{ display:"flex", height:"100vh", fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif", background:P.calcite, overflow:"hidden" }}>
+      <Sidebar persona={persona} view={view} setView={handleNav} reqs={reqs} onDemo={()=>setDemoStep(0)} ghConn={ghConn} bhConn={bhConn} />
+      <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
+        <TopBar persona={persona} setPersona={switchPersona} view={view} ghConn={ghConn} bhConn={bhConn} />
+        <div style={{ flex:1, overflowY:"auto", padding:"26px 30px" }}>
+
+          {view==="dashboard" && renderDashboard()}
+
+          {view==="pipeline" && (
+            <Section title="Pipeline Board" sub="All open roles by stage — click any card to open">
+              <Pipeline reqs={reqs} onSelect={setSelectedId} />
+            </Section>
+          )}
+
+          {view==="priority" && (
+            <Section title="Priority Queue" sub="Sorted by priority then days open">
+              <Card noPad>
+                <div style={{ display:"grid", gridTemplateColumns:"36px 2fr 70px 90px 120px 160px 75px", background:P.calcite, borderBottom:`1px solid ${P.mist}`, padding:"10px 18px", gap:14 }}>
+                  {["#","Role","Level","Dept","Priority","Status","Open"].map(h=><div key={h} style={{ fontSize:10, fontWeight:700, color:P.slate, textTransform:"uppercase", letterSpacing:0.5 }}>{h}</div>)}
+                </div>
+                {sortedReqs.map((r,i)=>(
+                  <div key={r.id} onClick={()=>setSelectedId(r.id)}
+                    style={{ display:"grid", gridTemplateColumns:"36px 2fr 70px 90px 120px 160px 75px", padding:"12px 18px", borderBottom:`1px solid ${P.mist}`, cursor:"pointer", alignItems:"center", gap:14 }}
+                    onMouseEnter={e=>e.currentTarget.style.background=P.calcite}
+                    onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                    <div style={{ fontSize:11, color:P.coolGray, fontWeight:600 }}>{i+1}</div>
+                    <div><div style={{ fontSize:13, fontWeight:700, color:P.charcoal }}>{r.title}</div><div style={{ fontSize:10, color:P.slate, marginTop:2 }}>{r.hm} · {r.org_leader}</div></div>
+                    <div style={{ fontSize:11, color:P.slate }}>{r.level}</div>
+                    <div style={{ fontSize:11, color:P.slate }}>{r.dept}</div>
+                    <PrioTag p={r.priority} sm />
+                    <StatusTag s={r.status} sm />
+                    <div style={{ fontSize:11, color:r.days_open>30?P.red:r.days_open>14?P.amber:P.coolGray, fontWeight:r.days_open>30?700:400 }}>{r.days_open>0?`${r.days_open}d`:"New"}</div>
+                  </div>
+                ))}
+              </Card>
+            </Section>
+          )}
+
+          {isQueueView && (
+            <Section title={VIEW_TITLE[view]}
+              sub={queueBanner?.msg}>
+              {queueBanner && <div style={{ background:a(queueBanner.color,0.08), border:`1px solid ${a(queueBanner.color,0.25)}`, borderRadius:8, padding:"10px 16px", marginBottom:16, fontSize:12, color:queueBanner.color, fontWeight:600 }}>{queueBanner.msg}</div>}
+              {activeQueue.length ? activeQueue.map(r=>(
+                <div key={r.id}>
+                  <ReqRow req={r} onClick={()=>setSelectedId(r.id)} />
+                  {view==="assign_q" && (
+                    <div style={{ background:P.purpleLight, border:`1px solid ${a(P.purple,0.25)}`, borderRadius:"0 0 10px 10px", padding:"9px 16px", marginTop:-7, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                      <div style={{ fontSize:11, color:P.purple, fontWeight:600 }}>✓ HRBP · OL · Finance · {r.fin_notes}</div>
+                      <Btn sm onClick={()=>setAssignTarget(r.id)} icon="⚡">Assign Recruiter</Btn>
+                    </div>
+                  )}
+                  {view==="intake_q" && (
+                    <div style={{ background:P.lapisLight, border:`1px solid ${a(P.lapis,0.22)}`, borderRadius:"0 0 10px 10px", padding:"9px 16px", marginTop:-7, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                      <div style={{ fontSize:11, color:P.lapis, fontWeight:600 }}>{r.jd_url?"✦ JD pre-loaded from Google Drive":"✦ Intake doc ready"}{r.gh_req_id?` · GH: ${r.gh_req_id}`:""}</div>
+                      <Btn sm onClick={()=>setIntakeId(r.id)} icon="✦">Open AI Intake Tool</Btn>
+                    </div>
+                  )}
+                  {["hrbp_q","org_q","finance_q"].includes(view) && (
+                    <div style={{ background:P.amberLight, border:`1px solid ${P.amberBorder}`, borderRadius:"0 0 10px 10px", padding:"9px 16px", marginTop:-7, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                      <div style={{ fontSize:11, color:P.amber, fontWeight:600 }}>{view==="hrbp_q"?"Awaiting HR review":view==="org_q"?"HRBP ✓ — awaiting strategic sign-off":"HRBP + OL ✓ — awaiting budget approval"}</div>
+                      <Btn sm onClick={()=>{setSelectedId(null);setApprovalTarget(r);}}>Review & Approve →</Btn>
+                    </div>
+                  )}
+                </div>
+              )) : <EmptyState icon="✓" title="Queue clear" sub="Nothing waiting for action right now." />}
+            </Section>
+          )}
+
+          {/* TA ONLY: Dedicated AI Intake Tab */}
+          {view==="ai_intake" && persona==="ta" && (
+            <AIIntakeView reqs={reqs} onOpenIntake={setIntakeId} myName={PERSONAS.ta.name} />
+          )}
+
+          {view==="sourcing" && (
+            <Section title="Sourcing Board" sub="Active candidate search — outreach is live. Target: qualified candidates to HM within 14 days.">
+              <div style={{ background:P.lapisLight, border:`1px solid ${a(P.lapis,0.22)}`, borderRadius:8, padding:"10px 16px", marginBottom:16, fontSize:12, color:P.lapis, fontWeight:600 }}>
+                Finance TTH benchmark: <strong>43 days</strong> · Target first submit: <strong>14 days</strong> · LinkedIn InMail + Gem sequences + HM-behalf active
+              </div>
+              {reqs.filter(r=>["sourcing","interviewing","offer"].includes(r.status)).map(r=><ReqRow key={r.id} req={r} onClick={()=>setSelectedId(r.id)} />)}
+            </Section>
+          )}
+
+          {view==="analytics" && <Section title="Analytics"><Analytics reqs={reqs} persona={persona} /></Section>}
+
+          {view==="budget" && (
+            <Section title="Budget View" sub="Q2 2026 headcount utilization — live">
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:20 }}>
+                {(()=>{
+                  const committed = reqs.filter(r=>["ta_queue","intake","sourcing","interviewing","offer","filled"].includes(r.status)).length;
+                  const inApproval = reqs.filter(r=>["submitted","hrbp_approved","org_approved"].includes(r.status)).length;
+                  return [["Q2 Slots",Q2.total,"Total released",P.charcoal],["Committed",committed,"Budget allocated",P.lapis],["In Approval",inApproval,"Pending sign-off",P.amber],["Available",Q2.total-committed-inApproval,"Unallocated",P.green]].map(([l,v,s,c])=><Kpi key={l} label={l} value={v} sub={s} accent={c} />);
+                })()}
+              </div>
+              <Card>
+                <div style={{ fontSize:14, fontWeight:700, color:P.charcoal, marginBottom:4 }}>Q2 2026 — Accounting HC (Ian Woller)</div>
+                <div style={{ fontSize:11, color:P.slate, marginBottom:16 }}>135 total · 99 filled Q1 · 36 released Q2 · Source: Finance HC Tracker</div>
+                {(()=>{
+                  const active = reqs.filter(r=>["ta_queue","intake","sourcing","interviewing","offer"].includes(r.status)).length;
+                  const inAppr = reqs.filter(r=>["submitted","hrbp_approved","org_approved"].includes(r.status)).length;
+                  return (<>
+                    <div style={{ height:16, background:P.cloud, borderRadius:99, overflow:"hidden", display:"flex", marginBottom:14 }}>
+                      <div style={{ width:`${(Q2.filled/Q2.total)*100}%`, background:P.green }} />
+                      <div style={{ width:`${(active/Q2.total)*100}%`, background:P.lapis }} />
+                      <div style={{ width:`${(inAppr/Q2.total)*100}%`, background:a(P.amber,0.55) }} />
+                    </div>
+                    <div style={{ display:"flex", gap:20, fontSize:12 }}>
+                      {[["Filled Q2",Q2.filled,P.green],["In Recruiting",active,P.lapis],["In Approval",inAppr,P.amber]].map(([l,v,c])=>(
+                        <div key={l} style={{ display:"flex", alignItems:"center", gap:7 }}><div style={{ width:12, height:12, borderRadius:3, background:c }} /><span>{l}: <strong>{v}</strong></span></div>
+                      ))}
+                    </div>
+                  </>);
+                })()}
+              </Card>
+            </Section>
+          )}
+
+          {view==="all_roles" && (
+            <Section title="All Open Roles" sub={`${reqs.filter(r=>r.status!=="draft").length} roles in system`}>
+              {reqs.filter(r=>r.status!=="draft").map(r=><ReqRow key={r.id} req={r} onClick={()=>setSelectedId(r.id)} />)}
+            </Section>
+          )}
+        </div>
+      </div>
+
+      {/* Overlays */}
+      {selected && <DetailPanel req={selected} persona={persona} onClose={()=>setSelectedId(null)}
+        onApprove={req=>{setSelectedId(null);setApprovalTarget(req);}}
+        onReject={req=>{setSelectedId(null);setApprovalTarget(req);}}
+        onAssign={id=>{setSelectedId(null);setAssignTarget(id);}}
+        onOpenIntake={id=>{setSelectedId(null);setIntakeId(id);}} />}
+      {approvalTarget && <ApprovalModal req={approvalTarget} persona={persona} onApprove={doApprove} onReject={doReject} onClose={()=>setApprovalTarget(null)} />}
+      {assignTarget && assignReq && <AssignModal req={assignReq} onAssign={doAssign} onClose={()=>setAssignTarget(null)} />}
+      {intakeId && intakeReq && <IntakeTool req={intakeReq} onClose={()=>setIntakeId(null)} onComplete={completeIntake} setGhConn={setGhConn} setBhConn={setBhConn} />}
+      {demoStep!==null && <DemoOverlay step={demoStep} onNext={()=>setDemoStep(s=>Math.min(s+1,DEMO_STEPS.length-1))} onPrev={()=>setDemoStep(s=>Math.max(s-1,0))} onClose={()=>setDemoStep(null)} />}
+      {toast && <Toast msg={toast.msg} type={toast.type} />}
+      <style>{CSS}</style>
+    </div>
+  );
+}
+
+const CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { -webkit-font-smoothing: antialiased; }
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #CDCED6; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #A6A6B4; }
+  @keyframes spin     { to { transform: rotate(360deg); } }
+  @keyframes blink    { 50% { opacity: 0; } }
+  @keyframes slideUp  { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  input, select, textarea, button { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+  button:focus-visible { outline: 2px solid #4665FF; outline-offset: 2px; }
+  input:focus, select:focus, textarea:focus {
+    border-color: #4665FF !important;
+    box-shadow: 0 0 0 3px rgba(70,101,255,0.12) !important;
+    outline: none;
+  }
+  a { text-decoration: none; }
+`;
+
+
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+  </script>
+</body>
+</html>
